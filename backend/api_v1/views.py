@@ -30,6 +30,11 @@ class ProjectView(APIView):
         project_status = request.query_params.get('status')
         project_priority = request.query_params.get('priority')
         assigned_to_id = request.query_params.get('assigned_to')
+        order = request.query_params.get('order')
+        
+        order_list = ['date_created', '-date_created']
+        if order not in order_list:
+            order = 'date_created'
         
         filters = {}
         
@@ -41,17 +46,25 @@ class ProjectView(APIView):
 
         if project_status:
             filters['status'] = project_status
+            
+            if project_status == 'pending':
+                filters['status'] = None
         if project_priority:
             filters['priority'] = project_priority
         if assigned_to_id:
-            filters['assigned_to__uuid'] = assigned_to_id
+            filters['assigned_to__id'] = assigned_to_id
 
         if user.role == 'admin':
             filters['created_by'] = user
         else:
             filters['assigned_to'] = user
-
-        projects = Project.objects.filter(search_filter, **filters)
+        
+        if search_filter:
+            projects = Project.objects.filter(search_filter, **filters).order_by(order)
+        else:
+            projects = Project.objects.filter(**filters)
+            
+            
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(projects, request)
         serializer = self.serializer_class(page, many=True)

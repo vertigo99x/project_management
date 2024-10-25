@@ -291,11 +291,11 @@ onMounted(() => {
         </div>
       </div>
       <div class="card-body">
-        <h6 class="mb-0 ">Assigned Jobs</h6>
-        <p class="text-sm ">Jobs assigned this week</p>
+        <h6 class="mb-0 ">Created Projects</h6>
+        <p class="text-sm ">Projects created this week</p>
         <hr class="dark horizontal">
         <div class="d-flex ">
-          <i class="material-icons text-sm my-auto me-1">schedule</i>
+          <i class="material-icons text-sm my-auto me-1">calendar</i>
           <p class="mb-0 text-sm"> From 12th Jan 2022 - 19th Jan 2022</p>
         </div>
       </div>
@@ -311,7 +311,7 @@ onMounted(() => {
         </div>
       </div>
       <div class="card-body">
-        <h6 class="mb-0 "> Daily Sales </h6>
+        <h6 class="mb-0 "> Assigned Projects </h6>
         <p class="text-sm "> (<span class="font-weight-bolder">+15%</span>) increase in today sales. </p>
         <hr class="dark horizontal">
         <div class="d-flex ">
@@ -331,7 +331,7 @@ onMounted(() => {
         </div>
       </div>
       <div class="card-body">
-        <h6 class="mb-0 ">Completed Tasks</h6>
+        <h6 class="mb-0 ">Completed Projects</h6>
         <p class="text-sm ">Last Campaign Performance</p>
         <hr class="dark horizontal">
         <div class="d-flex ">

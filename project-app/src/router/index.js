@@ -6,7 +6,7 @@ import store from '../store'
 import Dashboard from '../views/Dashboard.vue';
 import LoginView from '../views/LoginView.vue';
 import  GateManagement from '../views/GateManagement.vue';
-import RoutineMaintenance from '../views/RoutineMaintenance.vue';
+import Projects from '../views/Projects.vue';
 import JobView from '../views/JobView.vue';
 
 import Profile from '../views/Profile.vue'
@@ -30,9 +30,9 @@ const routes = [
         meta: { requireLogin: true }
     },
     {
-        path: '/routine-maintenance',
-        name: 'routine-maintenance',
-        component: RoutineMaintenance,
+        path: '/projects',
+        name: 'projects',
+        component: Projects,
         meta: { requireLogin: true }
     },
     {
@@ -81,7 +81,7 @@ router.beforeEach((to, from, next) => {
         }
     
     } else if (store.state.usercat === 'maintenance_supervisor' && to.matched.some(record => record.meta.requireLogin)) {
-        const allowedForSupervisor = ['dashboard', 'routine-maintenance', 'jobs', 'profile']; 
+        const allowedForSupervisor = ['dashboard', 'projects', 'jobs', 'profile']; 
         if (!allowedForSupervisor.includes(to.name)) {
           next({ name: 'dashboard', query: { to: to.path } });
         } else {

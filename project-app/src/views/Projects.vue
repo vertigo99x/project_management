@@ -17,15 +17,16 @@ const store = useStore();
 const isLoading = ref(false);
 const userData = ref(null);
 const searchText = ref('');
-const recentMaintenanceChecklistLoader = ref(false);
+const recentProjectsLoader = ref(false);
 
-const status = ref('pending');
+const status = ref('');
 const order = ref('');
+const priority = ref('');
 
 const isCreateGateProcess = ref(false);
 const confirmSubmitWorkOrder = ref(false);
 const selectedTruck = ref(null);
-const workOrders = ref(null);
+const projects = ref(null);
 const visitation_purpose_type = ref('');
 const currentTabIndex = ref(0);
 const currentList = ref(1);
@@ -98,36 +99,35 @@ async function refreshToken(callback) {
     }
 }
 
-async function getWorkOrders(recent=false, page=null, search=false) {
-    recentMaintenanceChecklistLoader.value=true;
-    
-        try {
-            const params = recent? {recent: recent} : {};
-            params.status=status.value;
-            if(page){
-                params.page = page;
-            }
-            if(search && searchText.value){
-                params.truck_number = searchText.value;
-            }
-            const response = await $http.get('api/v1/work-order', {params});
-            workOrders.value = response.data;
-            routineCount.value = 0;
-            routinePagesCount.value = 0;
-            totalNumberPerPage.value = workOrders.value.pagination.total_pages;
-            if(workOrders.value.data.length >= totalNumberPerPage && workOrders.value.pagination.total_pages > 1){
-                totalNumberPerPage.value = workOrders.value.data.length
-            }
+async function getProjects(page=null, extraparams=null){
+    let params = {}
+    recentProjectsLoader.value=true;
+    try{
+        if (page){
+        params.page=page;
+        }
+        if(extraparams){
+        params = {...params,...extraparams}
+        }
 
-            recentMaintenanceChecklistLoader.value=false;
-        } catch (error) {
-        recentMaintenanceChecklistLoader.value=false;
+        const response = await $http.get('api/v1/projects', {params})
+        projects.value = response.data
+        recentProjectsLoader.value=false;
+
+    } catch (error){
+        recentProjectsLoader.value=false;
             if (error.response) {
                 const status = error.response.status;
                 if (status === 401) {
                     // Unauthorized access, attempt to refresh token
-                    await refreshToken(getWorkOrders);
-                } else {
+                    await refreshToken(getProjects);
+                } else if(status === 429){
+                // Too Many Requests, wait for a moment and retry
+                console.error(`Too many requests. try again in a minute`)
+                setTimeout(() => {
+                    getProjects(page, extraparams);
+                }, 60000);
+            } else {
                     // Handle other status codes
                     console.error(`Error ${status}: ${error.response.data.message}`);
                     toast.error(`Error ${status}: ${error.response.data.message}`, {
@@ -150,7 +150,7 @@ async function getWorkOrders(recent=false, page=null, search=false) {
                     position: toast.POSITION.TOP_RIGHT,
                 });
             }
-        }
+    }
 }
 
 async function getUserData() {
@@ -229,7 +229,7 @@ async function submitWorkOrder(truckData) {
         isCreateGateProcess.value=false;
         routineCount.value += 1;
         if(routineCount.value >= totalNumberPerPage.value / 2 && totalNumberPerPage > 1 && totalNumberPerPage.value > 1){
-            getWorkOrders(order == 'recent'? true:false)
+            getProjects(order == 'recent'? true:false)
         }
     } catch (error) {
     
@@ -348,9 +348,9 @@ const selectedRoutineRow = (item) => {
 }
 
 onMounted(() => {
-    store.commit('setCurrentPage', 'routine-maintenance')
+    store.commit('setCurrentPage', 'projects')
     getUserData();
-    getWorkOrders();
+    getProjects();
 })
 
 
@@ -364,30 +364,42 @@ onMounted(() => {
           <div class="col-12">
             <div class="card my-4">
               <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                <div class="bg-gradient-secondary  border-radius-lg pt-4 pb-3">
+                <div class="bg-gradient-secondary  border-radius-lg pt-4 pb-3 d-flex align-items-center" style="justify-content: space-between;padding:0 1rem;">
                   <h6 class="text-white text-capitalize ps-3">
-                    <span>{{status}}</span>
-                    Routine Maintainance Checklist
+                    <span>{{status || "All"}}</span>
+                    Projects
                   </h6>
+                  <button style="background:var(--bs-primary);color:#fff;border:1px solid var(--bs-primary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="showCreateProjectModal=true">Create Project+</button>
                 </div>
                 <div class="searchbar my-3">
-                    <input type="text" class="" @keyup.enter="fetchTrucks(null, 'truck_number')"  v-model="searchText" placeholder="Search Table" >
-                    <button style="background:var(--bs-success);color:#fff;border:1px solid var(--bs-success);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="getWorkOrders(order == 'recent'? true:false,null,true)">Search</button>
-                    <button style="background:var(--bs-secondary);color:#fff;border:1px solid var(--bs-secondary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" class="reset-table" @click="status='pending';order='';searchText='';getWorkOrders(order == 'recent'? true:false,null,false)">Reset Table</button>
+                    <input type="text" class="" @keyup.enter="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='',order='';priority='';"  v-model="searchText" placeholder="Search Table" >
+                    <button style="background:var(--bs-success);color:#fff;border:1px solid var(--bs-success);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='',order='';priority='';">Search</button>
+                    <button style="background:var(--bs-secondary);color:#fff;border:1px solid var(--bs-secondary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" class="reset-table" @click="status='',order='';priority='';searchText='';getProjects()">Reset Table</button>
                     
                     
                 </div>
                 <div class="searchbar my-3">
-                    <select name="" id="" v-model="status" @change="getWorkOrders(order == 'recent'? true:false)">
-                        <option value="pending">Pending Routine Checklist</option>
-                        <option value="completed">Completed Routine Checklist</option>
-                        <option value="cancelled">Cancelled Routine Checklist</option>
+                    <select name="" id="" v-model="status" @change="getProjects(null, {status, priority, order})">
+                        <option value="">All Projects</option>
+                        <option value="pending">Pending Projects</option>
+                        <option value="done">Done Projects</option>
+                        <option value="abandoned">Abandoned Projects</option>
+                        <option value="cancelled">Cancelled Projects</option>
                       </select>
-                      <select class="mx-2" id="" v-model="order" @change="getWorkOrders(order == 'recent'? true:false)">
-                        <option value=""> Sort By Oldest</option>
-                        <option value="recent">Sort By Most Recent</option>
+                      <select class="mx-2" id="" v-model="priority" @change="getProjects(null, {status, priority, order})">
+                        <option value="">All Priorities</option>
+                        <option value="low"> Low Priority</option>
+                        <option value="mid">Mid Priority</option>
+                        <option value="high">High Priority</option>
                        
                       </select>
+                      <select class="" id="" v-model="order" @change="getProjects(null, {status, priority, order})">
+                        <option value=""> Sort By Oldest</option>
+                        <option value="-date_created">Sort By Most Recent</option>
+                       
+                      </select>
+                    
+                      
                     
                 </div>
               </div>
@@ -397,79 +409,79 @@ onMounted(() => {
                   <table class="table align-items-center mb-0">
                     <thead>
                       <tr>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Truck Number</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Truck Brand</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Date In</th>
-                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2" v-if="userData.role == 'admin' && (status=='completed' || status=='cancelled')">Maintenance Supervisor</th>
-                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" v-if="status=='completed'">Checklist Date</th>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Name</th>
+                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">project description</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" v-if="userData.role=='admin'">Assigned to</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">status</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">priority</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">date created</th>
+
                         <th class="text-secondary opacity-7"></th>
                       </tr>
                     </thead>
                     
-                    <tbody v-if="workOrders && workOrders.data.length > 0" >
-                      <tr  style="cursor:pointer"  v-for="item, index in workOrders.data" :key="index" @click="
-                      selectedRoutineRow(item);
-                      " :id="'work-order'+item.uuid">
+                    <tbody v-if="projects">
+                      <tr v-for="item in projects.data" :key="item">
+                        
                         <td>
-                          <div class="d-flex px-2 py-1">
-                            
-                            <div class="d-flex flex-column justify-content-center">
-                              <h6 class="mb-0 text-sm">{{item.truck.truck_number}}</h6>
-                              <p class="text-xs text-secondary mb-0">{{ item.truck.driver_name }}</p>
-                            </div>
+                          <div class="d-flex px-4 py-1 font-weight-bold" style="color:var(--bs-primary);text-transform: capitalize;">
+                              {{item.project_name}}
                           </div>
                         </td>
-                        <td>
-                          <p class="text-xs font-weight-bold mb-0">{{item.truck.brand_type}}</p>      
+                        <td class="text-sm">
+                          {{item.project_description.length >=25 ? item.project_description.slice(0,25) : item.project_description}}
                         </td>
-                        <td>
-                          <p class="text-xs font-weight-bold mb-0">{{moment(item.date_added).format("DD MMM, YYYY. hh:mm A") }}</p>      
+                        <td class="align-middle text-center text-sm" v-if="userData.role=='admin'">
+                          <span class="text-xs font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
+                          <span class="text-info font-weight-bold" style="cursor: pointer;"  v-else>Assign User</span>
                         </td>
-                        <td v-if="(status=='completed' || status=='cancelled') && userData.role=='admin'">
-                            <div class="d-flex px-2 py-1">
-                              
-                              <div class="d-flex flex-column justify-content-center">
-                                <h6 class="mb-0 text-sm">{{ item.maintenance_supervisor.last_name }} {{ item.maintenance_supervisor.first_name }}</h6>
-                                <p class="text-xs text-secondary mb-0">{{ item.maintenance_supervisor.email }}</p>
-                              </div>
-                            </div>
-                          </td>
                         <td class="align-middle text-center text-sm">
-                            <span class="badge badge-sm bg-gradient-success" v-if="item.status=='completed'">{{ item.status}}</span>
-                            <span class="badge badge-sm bg-gradient-danger" v-else-if="item.status=='cancelled'">{{ item.status }}</span>
-                            <span class="badge badge-sm bg-gradient" style="background:var(--bs-orange);" v-else>{{ item.status }}</span>
-                          </td>
-                        <td class="align-middle text-center" v-if="status=='completed'">
-                          <span class="text-secondary text-xs font-weight-bold" >{{moment(item.checklist_upload_date).format("DD MMM, YYYY. hh:mm A")}}</span>
+                          <span class="badge badge-sm bg-gradient-success" v-if="item.status=='done'">Done</span>
+                          <span class="badge badge-sm bg-gradient-danger" v-else-if="item.status=='cancelled'">Cancelled</span>
+                          <span class="badge badge-sm bg-gradient-secondary"  v-else-if="item.status=='abandoned'">Abandoned</span>
+                          <span class="badge badge-sm bg-gradient-info"  v-else-if="item.status=='in_progress'">In Progress</span>
+                          <span class="badge badge-sm bg-gradient" style="background:var(--bs-orange)"  v-else>Pending</span>
                         </td>
-                        
+                        <td class="align-middle text-center text-sm">
+                          <span class="badge badge-sm bg-gradient-success" v-if="item.priority=='low'">Low</span>
+                          <span class="badge badge-sm bg-gradient-danger" v-else-if="item.priority=='high'">High</span>
+                          <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else-if="item.priority=='mid'">Abandoned</span>
+                          <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else>No Priority</span>
+                        </td>
+                        <td class="align-middle text-center text-sm">
+                          <span class="text-xs font-weight-bold">{{moment(item.date_created).format("DD MMM, YYYY. hh:mm A") }} </span>
+                        </td>
+                        <td class="align-middle text-center text-sm">
+                          <span class="text-xs font-weight-bold" :class="{'redify':false}"></span>
+                        </td>
+                        <td></td>
                       </tr>
+                      
                      
                     </tbody>
                   </table>
-                  <div class="pagination"  v-if="workOrders">
+                  <div class="pagination"  v-if="projects">
 
-                    <div class="controls" v-if="workOrders.pagination">
-                     <span @click="getWorkOrders(order == 'recent'? true:false, workOrders.pagination.current_page - 1)"  v-if="workOrders.pagination.current_page > 1">
+                    <div class="controls" v-if="projects.pagination">
+                     <span @click="getProjects(null, {status, priority, order, search:searchText, page:projects.pagination.current_page - 1}) "  v-if="projects.pagination.current_page > 1">
                        <i class="material-icons">chevron_left</i>
                      </span>
-                     <span  v-else-if="workOrders.pagination.total_pages !== 1">
+                     <span  v-else-if="projects.pagination.total_pages !== 1">
                        <i class="material-icons">chevron_left</i>
                      </span>
-                     <span v-for="i in workOrders.pagination.total_pages" :key="i" @click="getWorkOrders(order == 'recent'? true:false, i)" :class="{'active':workOrders.pagination.current_page === i}">
+                     <span v-for="i in projects.pagination.total_pages" :key="i" @click="getProjects(null, {status, priority, order, search:searchText, page:i}) " :class="{'active':projects.pagination.current_page === i}">
                        {{ i }}
                      </span>
-                     <span @click="getWorkOrders(order == 'recent'? true:false, workOrders.pagination.current_page + 1)" v-if="workOrders.pagination.current_page < workOrders.pagination.total_pages">
+                     <span @click="getProjects(null, {status, priority, order, search:searchText, page:projects.pagination.current_page + 1}) " v-if="projects.pagination.current_page < projects.pagination.total_pages">
                        <i class="material-icons">chevron_right</i>
                      </span>
                     </div>
                  
                      <div class="pagination-info">
-                       <span>Page {{ workOrders.pagination.current_page }} of {{ workOrders.pagination.total_pages }}</span>
+                       <span>Page {{ projects.pagination.current_page }} of {{ projects.pagination.total_pages }}</span>
                      </div>
                    </div>
-                  <div class="table-loader" v-if="recentMaintenanceChecklistLoader">
+                  <div class="table-loader" v-if="recentProjectsLoader">
                     <div class="loader"></div>
                 </div>
                 </div>
@@ -1544,6 +1556,19 @@ button:disabled {
   
 @media screen and (max-width: 600px) {
 
+    .searchbar{
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      input{
+        width:100%;
+      }
+      
+      button{
+        margin-top:1rem;
+        margin-left:-1rem;
+      }
+    }
 
     .searchbar:nth-child(3){
         display:flex;
@@ -1552,7 +1577,7 @@ button:disabled {
         select{
             width:100%;
             margin:.5rem 0 !important;
-            padding:0;
+            padding:.2rem;
 
         }
 

@@ -147,31 +147,16 @@ onMounted(() => {
             <span class="nav-link-text ms-1" v-if="isShowText">Dashboard</span>
           </router-link>
         </li>
-        <li class="nav-item" v-if="usercat=='security_officer'">
-          <router-link to="security" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='gate-management'}">
-            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="material-icons opacity-10">local_shipping</i>
-            </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Gate Management</span>
-          </router-link>
-        </li>
         
         <li class="nav-item" v-if="usercat=='maintenance_supervisor' || usercat == 'admin'">
-          <router-link to="routine-maintenance" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='routine-maintenance'}">
+          <router-link to="projects" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='projects'}">
             <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
               <i class="material-icons opacity-10">engineering</i>
             </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Routine Maintenance</span>
+            <span class="nav-link-text ms-1" v-if="isShowText">Projects</span>
           </router-link>
         </li>
-        <li class="nav-item" v-if="usercat=='maintenance_supervisor' || usercat == 'admin'">
-          <router-link to="jobs" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='job-management'}">
-            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="material-icons opacity-10">construction</i>
-            </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Jobs</span>
-          </router-link>
-        </li>
+       
         <li class="nav-item my-4" v-if="usercat=='maintenance_supervisor' || usercat == 'security_officer'">
           <router-link to="profile" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='profile'}">
             <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -187,41 +172,7 @@ onMounted(() => {
 
 
 
-      <ul class="navbar-nav" v-if="usercat=='admin'">
-        <li class="nav-item" v-if="usercat=='maintenance_supervisor' || usercat == 'admin'">
-          <router-link to="jobs" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='job-management'}">
-            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="material-icons opacity-10">group</i>
-            </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Staff Management</span>
-          </router-link>
-        </li>
-
-
-        <li class="nav-item" v-if="usercat=='maintenance_supervisor' || usercat == 'admin'">
-          <router-link to="jobs" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='job-management'}">
-            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="material-icons opacity-10">local_shipping</i>
-            </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Truck Management</span>
-          </router-link>
-        </li>
-
-        
-        <li class="nav-item mt-3">
-          <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8"></h6>
-        </li>
-        <li class="nav-item" >
-          <router-link to="jobs" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='job-management'}">
-            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="material-icons opacity-10">person</i>
-            </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Profile</span>
-          </router-link>
-        </li>
-
-       
-      </ul>
+      
     </div>
     <div class="sidenav-footer position-absolute w-100 bottom-0 ">
       <div class="mx-3">

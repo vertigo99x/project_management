@@ -357,6 +357,7 @@ onBeforeUnmount(() => {
 <template>
     
     <div class="container-fluid py-4" v-if="userData">
+      
 
         <div class="" style="margin:0 2rem 3rem 2rem;" v-if="isSmallSize() && userData.role=='security_officer'">
             <router-link to="security" class="bg-gradient-info shadow-info text-white " style="border:1px solid var(--bs-blue); padding:.5rem 1rem;border-radius: .5rem;">Gate Management</router-link>
@@ -575,9 +576,8 @@ onBeforeUnmount(() => {
                 <div class="card-header pb-0">
                   <div class="row">
                     <div class="col-lg-6 col-md-6 col-7">
-                      <h6 v-if="userData.role=='security_officer'">Recent Gate Checks</h6>
-                      <h6 v-else-if="userData.role=='maintenance_supervisor'">Recent Routine Maintenance Checklists</h6>
-                      <h6 v-else-if="userData.role=='admin'">Recent Routine Maintenance Checklists</h6>
+                      <h6 v-if="userData.role=='admin'">Recently Created Projects</h6>
+                      <h6 v-else>Recently Assigned Projects</h6>
                     </div>
                     <div class="col-lg-6 col-5 my-auto text-end d-lg-block text-sm" v-if="userData.role=='admin'">
                         <span style="text-decoration: underline;color:var(--bs-blue);cursor:pointer">View All</span>
@@ -601,31 +601,47 @@ onBeforeUnmount(() => {
                     <table class="table align-items-center mb-0">
                       <thead>
                         <tr>
-                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Truck Number</th>
-                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Purpose</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" v-if="userData.role=='admin'">Security Officer</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date In</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date out</th>
+                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Project Name</th>
+                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">project description</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7" v-if="userData.role=='admin'">Assigned to</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">status</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">priority</th>
+                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">date created</th>
+
                         </tr>
                       </thead>
-                      <tbody v-if="gateProcess">
-                        <tr v-for="item in gateProcess" :key="item">
+                      <tbody v-if="projects">
+                        <tr v-for="item in projects.data" :key="item">
                           <td>
                             <div class="d-flex px-4 py-1 font-weight-bold" style="color:var(--bs-primary);">
-                                {{item.truck.truck_number}}
+                                {{item.project_name}}
                             </div>
                           </td>
                           <td class="text-sm">
-                            {{item.visitation_purpose_type}}
+                            {{item.project_description.length >=25 ? item.project_description.slice(0,25) : item.project_description}}
                           </td>
                           <td class="align-middle text-center text-sm" v-if="userData.role=='admin'">
-                            {{ item.security_officer.last_name }} {{ item.security_officer.first_name }}
+                            <span class="text-xs font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
+                            <span class="text-xs font-weight-bold" v-else>—</span>
                           </td>
                           <td class="align-middle text-center text-sm">
-                            <span class="text-xs font-weight-bold">{{moment(item.truck_date_in).format("DD MMM, YYYY. hh:mm A") }} </span>
+                            <span class="badge badge-sm bg-gradient-success" v-if="item.status=='done'">Done</span>
+                            <span class="badge badge-sm bg-gradient-danger" v-else-if="item.status=='cancelled'">Cancelled</span>
+                            <span class="badge badge-sm bg-gradient-secondary"  v-else-if="item.status=='abandoned'">Abandoned</span>
+                            <span class="badge badge-sm bg-gradient-info"  v-else-if="item.status=='in_progress'">In Progress</span>
+                            <span class="badge badge-sm bg-gradient" style="background:var(--bs-orange)"  v-else>Pending</span>
                           </td>
                           <td class="align-middle text-center text-sm">
-                            <span class="text-xs font-weight-bold" :class="{'redify':!item.truck_date_out}">{{item.truck_date_out ? moment(item.truck_date_out).format("DD MMM, YYYY. hh:mm A") : "STILL IN PREMISES"}}</span>
+                            <span class="badge badge-sm bg-gradient-success" v-if="item.priority=='low'">Low</span>
+                            <span class="badge badge-sm bg-gradient-danger" v-else-if="item.priority=='high'">High</span>
+                            <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else-if="item.priority=='mid'">Abandoned</span>
+                            <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else>No Priority</span>
+                          </td>
+                          <td class="align-middle text-center text-sm">
+                            <span class="text-xs font-weight-bold">{{moment(item.date_created).format("DD MMM, YYYY. hh:mm A") }} </span>
+                          </td>
+                          <td class="align-middle text-center text-sm">
+                            <span class="text-xs font-weight-bold" :class="{'redify':false}"></span>
                           </td>
                         </tr>
                         

@@ -145,6 +145,8 @@ async function getUserData() {
     }
 }
 
+
+
 async function submitCheck (update = false){
     const data = {
     visitation_purpose_type:visitation_purpose_type.value,
