@@ -6,7 +6,6 @@ export default createStore({
       access: null,
       currentPage:'dashboard',
       isDark: false,
-      usercat:null,
     },
     getters: {
         refresh: state => state.refresh,
@@ -22,9 +21,6 @@ export default createStore({
       setAccess(state, access) {
         state.access = access;
       },
-      setUsercat(state, usercat) {
-        state.usercat = usercat;
-      },
       setCurrentPage(state, currentPage) {  // Renamed from currentPage to setCurrentPage
         state.currentPage = currentPage;
       },
@@ -36,7 +32,7 @@ export default createStore({
         state.access = null;
         state.isDark = false;
         state.currentPage = 'dashboard';
-        state.usercat = null;
+        
       },
     },
     actions: {
@@ -45,7 +41,6 @@ export default createStore({
     },
     plugins: [
       createPersistedState({
-        // Options to configure persistence
         storage: window.sessionStorage, //window.localStorage,
       })
     ]

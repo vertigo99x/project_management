@@ -7,7 +7,9 @@ const chartBars = ref(null);
 const chartLineTasks = ref(null);
 const chartLine = ref(null);
 
-
+let chartBarsInstance = null;
+let chartLineInstance = null;
+let chartLineTasksInstance = null;
 
 const props = defineProps({
   userData: {
@@ -27,8 +29,12 @@ const enableChartBars = () => {
     if (chartBars.value) {
     const ctx = chartBars.value.getContext('2d'); // Get the 2D context of the canvas
 
+    if (chartBarsInstance) {
+      chartBarsInstance.destroy();
+    }
+
     // Initialize the Chart.js bar chart
-    new Chart(ctx, {
+    chartBarsInstance = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -112,7 +118,11 @@ const enableChartLine = () => {
   if(chartLine.value){
     const ctx2 = chartLine.value.getContext("2d");
 
-    new Chart(ctx2, {
+    if (chartLineInstance) {
+      chartLineInstance.destroy();
+    }
+
+    chartLineInstance = new Chart(ctx2, {
       type: "line",
       data: {
         labels: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -198,7 +208,11 @@ const enableChartLine = () => {
 const enableChartLineTasks = () => {
   const ctx3 = chartLineTasks.value.getContext("2d");
 
-    new Chart(ctx3, {
+  if (chartLineTasksInstance) {
+      chartLineTasksInstance.destroy();
+    }
+
+    chartLineTasksInstance = new Chart(ctx3, {
       type: "line",
       data: {
         labels: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -332,7 +346,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="col-lg-4 col-md-6 mt-4 mb-4">
+  <div class="col-lg-4 col-md-6 mt-4 mb-4" v-if="props.userData.role=='admin'">
     <div class="card z-index-2 ">
       <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
         <div class="bg-gradient-primary shadow-primary border-radius-lg py-3 pe-1">
@@ -355,7 +369,7 @@ onMounted(() => {
   <div class="col-lg-4 col-md-6 mt-4 mb-4">
     <div class="card z-index-2  ">
       <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-        <div class="bg-gradient-success shadow-success border-radius-lg py-3 pe-1">
+        <div class="bg-gradient-info shadow-info border-radius-lg py-3 pe-1">
           <div class="chart">
             <canvas id="chart-line" ref="chartLine"  class="chart-canvas" height="170"></canvas>
           </div>
@@ -363,16 +377,16 @@ onMounted(() => {
       </div>
       <div class="card-body" v-if="props.chartData">
         <h6 class="mb-0 "> Assigned Projects </h6>
-        <p class="text-sm "> (<span class="font-weight-bolder">{{getTodayPercent(props.chartData.data.assigned_count)}}%</span>) increase in assigned Projects </p>
+        <p class="text-sm "> (<span class="font-weight-bolder">{{getTodayPercent(props.chartData.data.assigned_count)}}%</span>) <span v-if="props.userData.role=='admin'">increase in assigned Projects</span><span v-else>increase in Projects assigned to you</span> </p>
         <hr class="dark horizontal">
     
       </div>
     </div>
   </div>
-  <div class="col-lg-4 mt-4 mb-3">
+  <div class="col-lg-4 mt-4 mb-3" :class="{'col-lg-4 col-md-6 mt-4 mb-4':props.userData.role=='user'}">
     <div class="card z-index-2 ">
       <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-        <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+        <div class="bg-gradient-success shadow-success border-radius-lg py-3 pe-1">
           <div class="chart">
             <canvas id="chart-line-tasks" ref="chartLineTasks" class="chart-canvas" height="170"></canvas>
           </div>
@@ -380,7 +394,7 @@ onMounted(() => {
       </div>
       <div class="card-body" v-if="props.chartData">
         <h6 class="mb-0 ">Completed Projects</h6>
-        <p class="text-sm ">Completed Projects by Users</p>
+        <p class="text-sm "> <span v-if="props.userData.role=='admin'">Completed Projects by Users</span><span v-else>Projects Completed by you</span></p>
         <hr class="dark horizontal">
        
       </div>

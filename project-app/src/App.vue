@@ -12,7 +12,7 @@ const loadedScripts = ref(false);
 const isSidebarOpen = ref(false);
 
 const isAuthenticated = ref(store.state.refresh !== null?true:false);
-const usercat = ref(store.getters.usercat);
+
 const currentPage = ref(store.getters.currentTab);
 
 const isDark = ref(store.getters.isDark);
@@ -22,9 +22,6 @@ watch(() => store.state.refresh, (newVal) => {
   isAuthenticated.value = newVal !== null ? true : false;
 }, { immediate: true });
 
-watch(() => store.state.usercat, (newVal) => {
-  usercat.value = newVal;
-}, { immediate: true });
 
 watch(() => store.state.currentPage, (newVal) => {
   currentPage.value = newVal;
@@ -148,7 +145,7 @@ onMounted(() => {
           </router-link>
         </li>
         
-        <li class="nav-item" v-if="usercat=='maintenance_supervisor' || usercat == 'admin'">
+        <li class="nav-item" >
           <router-link to="projects" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='projects'}">
             <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
               <i class="material-icons opacity-10">engineering</i>
@@ -157,14 +154,7 @@ onMounted(() => {
           </router-link>
         </li>
        
-        <li class="nav-item my-4" v-if="usercat=='maintenance_supervisor' || usercat == 'security_officer'">
-          <router-link to="profile" class="nav-link text-white " :class="{'bg-gradient-primary':currentPage=='profile'}">
-            <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-              <i class="material-icons opacity-10">person</i>
-            </div>
-            <span class="nav-link-text ms-1" v-if="isShowText">Profile</span>
-          </router-link>
-        </li>
+       
       </ul>
 
       

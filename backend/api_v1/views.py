@@ -112,6 +112,15 @@ class ProjectView(APIView):
         project = get_object_or_404(Project, uuid=uuid)
         serializer = ProjectSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
+            
+            if project and not project.assigned_to and request.data.get('assigned_to'):
+                instance = Activities.objects.create(
+                    user = project.assigned_to,
+                    message = f"You have been assigned a project: {request.data.get('project_name')}",
+                    status ='success',
+                ) 
+                instance.save()
+            
             serializer.save()
             
             instance = Activities.objects.create(
@@ -120,6 +129,7 @@ class ProjectView(APIView):
                     status ='primary',
                 ) 
             instance.save()
+            
 
             response_data = {
                 "status": True,
@@ -137,8 +147,14 @@ class ProjectView(APIView):
             instance = Activities.objects.create(
                     user = request.user,
                     message = f"You Deleted a Project: {project.project_name}",
-                    status ='primary',
+                    status ='cancelled',
                 ) 
+            instance = Activities.objects.create(
+                    user = project.assigned_to,
+                    message = f"A project was Deleted: {project.project_name}",
+                    status ='cancelled',
+                ) 
+            
         project.delete()
         instance.save()
         response_data = {
@@ -188,8 +204,10 @@ class DashboardData(APIView):
                 assigned_count[day_of_week] += 1
 
         else:
-            assigned_projects = Project.objects.filter(assigned_to=user, date_created__range=[start_of_week, end_of_week])
-            completed_projects = Project.objects.filter(assigned_to=user, status='done', date_created__range=[start_of_week, end_of_week])
+            total_assigned_projects = Project.objects.filter(assigned_to=user)
+            assigned_projects = total_assigned_projects.filter(date_created__range=[start_of_week, end_of_week])
+            total_completed_projects = Project.objects.filter(assigned_to=user, status='done')
+            completed_projects = total_completed_projects.filter(date_created__range=[start_of_week, end_of_week])
             for project in assigned_projects:
                 day_of_week = (project.date_created.weekday() + 1) % 7
                 assigned_count[day_of_week] += 1
@@ -204,10 +222,10 @@ class DashboardData(APIView):
             "status": True,
             "message": "Weekly project stats",
             "data": {
-                "total_created_count":total_created_projects.count(),
+                "total_created_count":total_created_projects.count() if role == 'admin' else None,
                 "total_completed_count": total_completed_projects.count(),
                 "total_assigned_count": total_assigned_projects.count(),
-                "total_cancelled_or_abandoned_count": total_cancelled_or_abandoned_projects.count(),
+                "total_cancelled_or_abandoned_count": total_cancelled_or_abandoned_projects.count() if role == 'admin' else None,
                 "created_count": created_count if role == 'admin' else None, 
                 "assigned_count": assigned_count,  
                 "completed_count": completed_count,

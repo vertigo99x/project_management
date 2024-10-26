@@ -56,7 +56,6 @@ async function getUserData() {
     try {
         const response = await $http.get('accounts/userdata');
         userData.value = response.data;
-        store.commit('setUsercat', userData.value.role)
         //userCat.value = userData.role
         isLoading.value = false;
     } catch (error) {
@@ -103,7 +102,7 @@ async function getUserData() {
 }
 
 async function getDashboardData(loader=true) {
-    if(loader){
+      if(loader){
         isLoading.value = true;
     } else{
         isLoading.value = false;
@@ -155,9 +154,14 @@ async function getDashboardData(loader=true) {
     }
 }
 
-async function getProjects(page=null, extraparams=null){
+async function getProjects(loader=true, page=null, extraparams={order:'-date_created'}){
     let params = {}
-    recentProjectsLoader.value=true;
+    
+    if(loader){
+      recentProjectsLoader.value=true;
+    } else{
+      recentProjectsLoader.value=false;
+    }
     try{
         if (page){
         params.page=page;
@@ -267,7 +271,7 @@ async function getActivities(loader=true) {
 async function getAppData(){
     getUserData();
     getDashboardData();
-    //getGateProcess();
+    
     getProjects();
     getActivities();
 }
@@ -291,6 +295,7 @@ const autoReload = () => {
         timer = setInterval(() => {
             getDashboardData(false);
             getActivities(false);
+            getProjects(false);
         }, 5000)
     }
 }
@@ -298,7 +303,7 @@ const autoReload = () => {
 onMounted(() => {
     store.commit('setCurrentPage', 'dashboard')
     getAppData();
-    //autoReload();
+    autoReload();
 });
 
 onBeforeUnmount(() => {
@@ -369,7 +374,7 @@ onBeforeUnmount(() => {
             <div class="col-xl-3 col-sm-6">
               <div class="card">
                 <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+                  <div class="icon icon-lg icon-shape bg-gradient-danger shadow-danger text-center border-radius-xl mt-n4 position-absolute">
                     <i class="material-icons opacity-10">cancel_presentation</i>
                   </div>
                   <div class="text-end pt-1">
@@ -384,10 +389,48 @@ onBeforeUnmount(() => {
               </div>
             </div>
         </div>
+        <div class="row" v-if="userData.role == 'user' && dashboardData">
+            
+            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+              <div class="card">
+                <div class="card-header p-3 pt-2">
+                  <div class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
+                    <i class="material-icons opacity-10">assignment</i>
+                  </div>
+                  <div class="text-end pt-1">
+                    <p class="text-sm mb-0 text-capitalize">Total Assigned Jobs</p>
+                    <h4 class="mb-0">{{dashboardData.data.total_assigned_count}}</h4>
+                  </div>
+                </div>
+                <hr class="dark horizontal my-0">
+                <div class="card-footer p-3">
+                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+              <div class="card">
+                <div class="card-header p-3 pt-2">
+                  <div class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
+                    <i class="material-icons opacity-10">fact_check</i>
+                  </div>
+                  <div class="text-end pt-1">
+                    <p class="text-sm mb-0 text-capitalize">Total Completed Jobs</p>
+                    <h4 class="mb-0">{{dashboardData.data.total_completed_count}}</h4>
+                  </div>
+                </div>
+                <hr class="dark horizontal my-0">
+                <div class="card-footer p-3">
+                  <p class="mb-0"><span class="text-danger text-sm font-weight-bolder"></span> </p>
+                </div>
+              </div>
+            </div>
+            
+        </div>
 
           <div class="row mt-4">
             
-           <MiddleCharts :userData="userData" :chartData="dashboardData" v-if="userData.role == 'admin' && dashboardData" />
+           <MiddleCharts :userData="userData" :chartData="dashboardData" v-if="dashboardData" />
           </div>
 
           <div class="row mb-4">
@@ -455,7 +498,7 @@ onBeforeUnmount(() => {
                           <td class="align-middle text-center text-sm">
                             <span class="badge badge-sm bg-gradient-success" v-if="item.priority=='low'">Low</span>
                             <span class="badge badge-sm bg-gradient-danger" v-else-if="item.priority=='high'">High</span>
-                            <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else-if="item.priority=='mid'">Abandoned</span>
+                            <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else-if="item.priority=='mid'">mid</span>
                             <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else>No Priority</span>
                           </td>
                           <td class="align-middle text-center text-sm">
@@ -478,7 +521,7 @@ onBeforeUnmount(() => {
 
             </div>
             
-            <div class="col-lg-4 col-md-6" style="height:fit-content;" v-if="userData.role=='admin' || userData.role == 'maintenance_supervisor'">
+            <div class="col-lg-4 col-md-6" style="height:fit-content;">
               <div class="card h-100">
                 <div class="card-header pb-0">
                   <h6>Activities</h6>

@@ -31,10 +31,7 @@ const showCreateProjectModal = ref(false);
 
 const projects = ref(null);
 const users = ref(null);
-const visitation_purpose_type = ref('');
-const currentTabIndex = ref(0);
-const currentList = ref(1);
-const reg = ref(null);
+
 const mode = ref('create');
 
 
@@ -180,7 +177,7 @@ async function getUserData() {
     try {
         const response = await $http.get('accounts/userdata');
         userData.value = response.data;
-        store.commit('setUsercat', userData.value.role)
+        //store.commit('setUsercat', userData.value.role)
         //userCat.value = userData.role
         isLoading.value = false;
     } catch (error) {
@@ -227,15 +224,19 @@ async function submitProject(action='create') {
               });
               return ;
         }
+        
+
     try {
       isLoading.value = true;
         const data = {
             "project_name": projectData.value.project_name,
             "project_description": projectData.value.project_description,
-            "status": null,
+            "status": projectData.value.project_status,
             "priority": projectData.value.project_priority.toLowerCase(),
             "assigned_to_id": projectData.value.assigned_to ? projectData.value.assigned_to.id : null
         }
+
+       
 
         let response = action === 'create' ? await $http.post('api/v1/projects/create/', data) : action === 'update' ? await $http.put(`api/v1/projects/update/${projectData.value.id}/`, data) : action === 'delete' ? await $http.delete(`api/v1/projects/delete/${projectData.value.id}/`) : null
         
@@ -294,13 +295,8 @@ async function submitProject(action='create') {
 
 
 
-
-
-const setisCreateGateProcess = (val) => {
-    isCreateGateProcess.value = val;
-}
-
 const selectProject = (item) => {
+  console.log(item)
     projectData.value = {
         id:item.uuid,
         project_name:item.project_name,
@@ -310,82 +306,18 @@ const selectProject = (item) => {
           last_name:item.assigned_to.last_name,
           first_name:item.assigned_to.first_name,
         } : null,
-        project_status: item.project_status || null,
+        project_status: item.status || '',
         
       }
       mode.value = 'update';
       showCreateProjectModal.value = true;
 }
 
-const resetCheckList = () => {
-    visitation_purpose_type.value = ""
-          currentTabIndex.value = 0
-          currentList.value = 1
-            selectedTruckData.value = {
-                electrical_system:"",
-                air_cleaner:"",
-                air_tank:"",
-                water_filter:"",
-                axle_hub_lubricant:"",
-                coolant_level:"",
-                transmission_oil_level:"",
-                engine_oil_level:"",
-                chassis_beams:null,
-                kingpin:null,
-                trailer_connecting_hose:null,
-                hydrometer_and_diesel_tank:null,
-                tractor_brake:null,
-                transmission_fluid_level:null,
-                gearbox_oil_level:null,
-                axle_tank_and_disch_water:null,
-                trailer_air_valve_leakage:null,
-                wheel_studs:null,
-                brake_lining:null,
-                hub_covers:null,
-                spring_center_bolt:null,
-                equalizer:null,
-                shock_absorbers:null,
-                shackle_pins:null,
-                overall_trailer_appearance:null,
-                fan_belt_tension:null,
-                pulley_for_clearance:null,
-                tie_rod_clearance:null,
-                oil_leakage:null,
-                coolant_spills_leaks:null,
-                air_cleaner_housing:null,
-                air_leakage:null,
-                dashboard_functions:null,
-                air_pressure:null,
-                oil_pressure:null,
-                water_temperature:null,
-                exhaust_leakage:null,
-                front_shock_absorber:null,
-                cab_barrel:null,
-            }
-}
-
-const setCurrentTabIndex = (number) => {
-    currentTabIndex.value = number
-}
-
-const modalScrollTop = () => {
-    reg.value.scrollTo(0,0)
-}
-
-const selectedRoutineRow = (item) => {
-    if(status.value === 'pending' || status.value === 'completed'){
-        resetCheckList();
-        selectTruck(item);
-        setCurrentTabIndex(1);
-        setisCreateGateProcess(true);
-    }
-}
-
 onMounted(() => {
     store.commit('setCurrentPage', 'projects')
     getUserData();
     getProjects();
-    getUsers();
+    
 })
 
 
@@ -404,7 +336,14 @@ onMounted(() => {
                     <span>{{status || "All"}}</span>
                     Projects
                   </h6>
-                  <button style="background:var(--bs-primary);color:#fff;border:1px solid var(--bs-primary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="mode='create';showCreateProjectModal=true">Create Project+</button>
+                  <button v-if="userData.role=='admin'" style="background:var(--bs-primary);color:#fff;border:1px solid var(--bs-primary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="projectData={
+                    id:null,
+                    project_name:'',
+                    project_description:'',
+                    assigned_to:null,
+                    project_status:'',
+                    project_priority:'',
+                  };mode='create';showCreateProjectModal=true">Create Project+</button>
                 </div>
                 <div class="searchbar my-3">
                     <input type="text" class="" @keyup.enter="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='';order='';priority='';"  v-model="searchText" placeholder="Search Table" >
@@ -464,11 +403,11 @@ onMounted(() => {
                           </div>
                         </td>
                         <td class="text-sm">
-                          {{item.project_description.length >=25 ? item.project_description.slice(0,25) : item.project_description}}
+                          {{item.project_description.length >=30 ? item.project_description.slice(0,30) : item.project_description}}
                         </td>
                         <td class="align-middle text-center text-sm" v-if="userData.role=='admin'">
                           <span class="text-secondary font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
-                          <span class="text-info font-weight-bold" style="cursor: pointer;" @click="selectProject(item);showUsersModal=true;" v-else>Assign User</span>
+                          <span class="text-info font-weight-bold" style="cursor: pointer;" @click="selectProject(item);getUsers();showUsersModal=true;" v-else>Assign User</span>
                         </td>
                         <td class="align-middle text-center text-sm">
                           <span class="badge badge-sm bg-gradient-success" v-if="item.status=='done'">Done</span>
@@ -548,39 +487,60 @@ onMounted(() => {
              
               <div class="field2">
                 
-                <div class="checklist">
+                <div class="checklist" :class="{'d-flex':userData.role=='user'}">
                   <span>Project Name:</span>
                   <input
                     type="text"
                     id="project_name"
                     v-model="projectData.project_name"
+                    v-if="userData.role=='admin'"
                   />
+                  <span v-if="userData.role=='user'" class="mx-2 text-dark"> {{projectData.project_name}}</span>
                 </div>
                 <div class="checklist">
                   <span>Project Description:</span>
-                  <textarea  style="resize:none;" name="" id="" cols="30" rows="10" v-model="projectData.project_description"></textarea>
+                  <textarea  style="resize:none;" name="" id="" cols="30" rows="10" v-model="projectData.project_description" v-if="userData.role=='admin'"></textarea>
+                  <p class="text-dark" style="text-overflow: clip;overflow-y:auto;max-height:10rem;" v-else>{{projectData.project_description}}</p>
                 </div>
-                <div class="checklist d-flex">
+                <div class="checklist d-flex" v-if="userData.role == 'admin'">
                   <span>User:</span>
                   <span class="mx-2 text-info" style="text-transform: capitalize;" v-if="projectData.assigned_to">{{projectData.assigned_to.last_name}} {{projectData.assigned_to.first_name}}</span>
-                  <span class="mx-2 text-secondary" style="cursor: pointer;text-decoration: underline;" v-if="projectData.assigned_to" @click="showUsersModal=true">Change User?</span>
-                  <span class="mx-2 text-info" style="cursor: pointer;text-decoration: underline;" v-else @click="showUsersModal=true">Assign User</span>
+                  <span class="mx-2 text-secondary" style="cursor: pointer;text-decoration: underline;" v-if="projectData.assigned_to" @click="getUsers();showUsersModal=true">Change User?</span>
+                  <span class="mx-2 text-info" style="cursor: pointer;text-decoration: underline;" v-else @click="getUsers();showUsersModal=true">Assign User</span>
                 </div>
                 <div class="px-2">
                   <span>Priority:</span>
-                  <select class="mx-2" name="" id="" v-model="projectData.project_priority">
-                    <option value="">Select Priority</option>
+                  <select class="mx-2" name="" id="" v-model="projectData.project_priority" v-if="userData.role == 'admin'">
+                    <option value="" disabled>Select Priority</option>
                     <option value="low">Low</option>
                     <option value="mid">Mid</option>
                     <option value="high">High</option>
                   </select>
+                  <span  class="mx-2 text-dark" v-else>{{ projectData.project_priority }}</span>
+                </div>
+                <div class="px-2 py-3">
+                  <span>Status:</span>
+                  <select class="mx-2" name="" id="" v-model="projectData.project_status" v-if="userData.role == 'admin'">
+                    <option value="" disabled>Select Status</option>
+                    <option value="in_progress" >in_progress</option>
+                    <option value="done">done</option>
+                    <option value="abandoned">abandoned</option>
+                    <option value="cancelled">cancelled</option>
+                  </select>
+                  <span  class="mx-2 text-dark" v-else>{{ projectData.project_status.replace('_', ' ') }}</span>
                 </div>
 
-                <div class="checklist buttons">
+                <div class="checklist" v-if="userData.role == 'admin'">
+                  <span class="text-danger" style="cursor:pointer;text-decoration: underline;" v-if="projectData.project_status!=='cancelled'" @click="projectData.project_status='cancelled';submitProject('update');">Cancel this Project?</span>
+                  <span class="text-danger font-weight-bold" style="" v-if="projectData.project_status=='cancelled'">PROJECT WAS CANCELLED</span>
+                  <span class="text-info" style="cursor:pointer;text-decoration: underline;" v-else" @click="projectData.project_status='in_progress';submitProject('update');">Revive this Project?</span>
+                </div>
+                <div class="checklist buttons" v-if="userData.role == 'admin'">
                   <button style="text-transform: capitalize;" v-if="mode == 'create'" @click="submitProject()">Create Project +</button>
                   <button style="text-transform: capitalize;" v-else-if="mode == 'update'" @click="submitProject('update')">Update Project</button>
                   <button  style="text-transform: capitalize;background:var(--bs-danger);" v-if="mode === 'update'" @click="confirmDeleteProject=true">Delete Project</button>
                 </div>
+               
               </div>
             </div>
 
@@ -628,7 +588,7 @@ onMounted(() => {
                       </tr>
                     </thead>
                     
-                    <tbody v-if="projects">
+                    <tbody v-if="users">
                       <tr v-for="item in users.data" :key="item">
 
                         <td style="cursor: pointer;" @click="projectData.assigned_to = {id:item.id,last_name:item.last_name,first_name:item.first_name};showUsersModal=false">
