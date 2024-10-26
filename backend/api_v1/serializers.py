@@ -1,5 +1,5 @@
 from rest_framework import serializers 
-from .models import Project 
+from .models import Project, Activities
 from accounts.models import User
 from accounts.serializers import UserSerializer
 
@@ -34,3 +34,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         instance.save()
         
         return instance
+    
+class ActivitySerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Activities
+        fields = '__all__'
+        
+        
+        

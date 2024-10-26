@@ -468,7 +468,7 @@ onMounted(() => {
                         </td>
                         <td class="align-middle text-center text-sm" v-if="userData.role=='admin'">
                           <span class="text-secondary font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
-                          <span class="text-info font-weight-bold" style="cursor: pointer;"  v-else>Assign User</span>
+                          <span class="text-info font-weight-bold" style="cursor: pointer;" @click="selectProject(item);showUsersModal=true;" v-else>Assign User</span>
                         </td>
                         <td class="align-middle text-center text-sm">
                           <span class="badge badge-sm bg-gradient-success" v-if="item.status=='done'">Done</span>

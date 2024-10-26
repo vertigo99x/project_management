@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import RetrieveAPIView
 from .models import User
-from .serializers import UserSerializer, ChangePasswordSerializer
+from .serializers import UserSerializer
 #from api.models import Activities
 from rest_framework.pagination import PageNumberPagination
 
@@ -70,30 +70,5 @@ class GetUsers(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-    
-class ChangePassword(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
-    
-    def post(self, request, *args, **kwargs):
-        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
-        
-        if serializer.is_valid():
-            # Set the new password
-            request.user.set_password(serializer.validated_data['new_password'])
-            request.user.save()
-            
-            if request.user.role != 'security_officer':
-                instance = Activities.objects.create(
-                    user = request.user,
-                    icon_tag = 'lock',
-                    message = "You changed your password",
-                    status ='success',
-                ) 
-                instance.save()
-            return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
-             
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     

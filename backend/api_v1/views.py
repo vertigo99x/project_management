@@ -6,8 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import JSONParser 
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
-from .models import Project
-from .serializers import ProjectSerializer
+from .models import Project, Activities
+from .serializers import ProjectSerializer, ActivitySerializer
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now, timedelta
 from django.db.models import Count
@@ -37,10 +37,11 @@ class ProjectView(APIView):
         assigned_to_id = request.query_params.get('assigned_to')
         order = request.query_params.get('order')
         
-        order_list = ['date_created', ]
+        order_list = ['date_created','-date_created']
         if order not in order_list:
             order = 'date_created'
-        
+            
+    
         filters = {}
         
         
@@ -67,7 +68,7 @@ class ProjectView(APIView):
         if search_filter:
             projects = Project.objects.filter(search_filter, **filters).order_by(order)
         else:
-            projects = Project.objects.filter(**filters)
+            projects = Project.objects.filter(**filters).order_by(order)
             
             
         paginator = self.pagination_class()
@@ -91,6 +92,14 @@ class ProjectView(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save(created_by=request.user)
+            
+            instance = Activities.objects.create(
+                    user = request.user,
+                    message = f"You Created a Project: {request.data.get('project_name')}",
+                    status ='success',
+                ) 
+            instance.save()
+
             response_data = {
                 "status": True,
                 "message": "Project created successfully.",
@@ -105,17 +114,33 @@ class ProjectView(APIView):
         if serializer.is_valid():
             serializer.save()
             
+            instance = Activities.objects.create(
+                    user = request.user,
+                    message = f"You Updated a Project: {request.data.get('project_name')}",
+                    status ='primary',
+                ) 
+            instance.save()
+
             response_data = {
                 "status": True,
-                "message": "Project Updated successfully.",
+                "message":"Project Updated successfully.",
                 "data": serializer.data,
             }
+            
             return Response(response_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
     def delete(self, request, uuid, *args, **kwargs):
         project = get_object_or_404(Project, uuid=uuid)
+        
+        if project:
+            instance = Activities.objects.create(
+                    user = request.user,
+                    message = f"You Deleted a Project: {project.project_name}",
+                    status ='primary',
+                ) 
         project.delete()
+        instance.save()
         response_data = {
                 "status": True,
                 "message": "Project was Deleted successfully.",
@@ -144,9 +169,14 @@ class DashboardData(APIView):
 
         
         if role == 'admin':
-            created_projects = Project.objects.filter(created_by=user, date_created__range=[start_of_week, end_of_week])
-            completed_projects = Project.objects.filter(created_by=user, status='done', date_created__range=[start_of_week, end_of_week])
-            assigned_projects = Project.objects.filter(assigned_to__isnull=False, created_by=user, date_created__range=[start_of_week, end_of_week])
+            total_created_projects = Project.objects.filter(created_by=user)
+            total_cancelled_or_abandoned_projects = Project.objects.filter(Q(status="abandoned") | Q(status="cancelled"), created_by=user)
+            created_projects = total_created_projects.filter(date_created__range=[start_of_week, end_of_week])
+            total_completed_projects = Project.objects.filter(created_by=user, status='done')
+            completed_projects = total_completed_projects.filter(date_created__range=[start_of_week, end_of_week])
+            total_assigned_projects = Project.objects.filter(assigned_to__isnull=False, created_by=user)
+            assigned_projects = total_assigned_projects.filter(date_created__range=[start_of_week, end_of_week])
+            
             for project in created_projects:
                 day_of_week = (project.date_created.weekday() + 1) % 7
                 created_count[day_of_week] += 1
@@ -174,6 +204,10 @@ class DashboardData(APIView):
             "status": True,
             "message": "Weekly project stats",
             "data": {
+                "total_created_count":total_created_projects.count(),
+                "total_completed_count": total_completed_projects.count(),
+                "total_assigned_count": total_assigned_projects.count(),
+                "total_cancelled_or_abandoned_count": total_cancelled_or_abandoned_projects.count(),
                 "created_count": created_count if role == 'admin' else None, 
                 "assigned_count": assigned_count,  
                 "completed_count": completed_count,
@@ -182,3 +216,33 @@ class DashboardData(APIView):
             }
         }
         return Response(response_data)
+    
+
+   
+class ActivityView(APIView):
+    parser_classes = [JSONParser]
+    pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    serializer_classes = ActivitySerializer   
+    
+    def get(self, request):
+        user = request.user
+        activities = Activities.objects.filter(user=user)
+        paginator = self.pagination_class()
+        paginated_files = paginator.paginate_queryset(activities, request)
+        
+        serializer = ActivitySerializer(paginated_files, many=True, context={'request': request})
+        
+        response_data = {
+                "status": True,
+                "message": "",
+                "data": serializer.data,
+                "pagination": {
+                    "current_page": paginator.page.number,
+                    "total_pages": paginator.page.paginator.num_pages,
+                    "page_size": paginator.page_size,
+                    "total_items": paginator.page.paginator.count,
+                }
+            }
+        return Response(response_data, status=status.HTTP_200_OK)

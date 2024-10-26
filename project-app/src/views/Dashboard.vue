@@ -16,13 +16,11 @@ const route = useRoute();
 const store = useStore();
 
 const isLoading = ref(false);
-const recentMaintenanceChecklistLoader = ref(false);
 const recentProjectsLoader = ref(false);
 const recentActivitiesLoader = ref(false);
 
 const userData = ref(null);
 const dashboardData = ref(null);
-const gateProcess = ref(null);
 const projects = ref(null);
 const activities = ref(null);
 
@@ -131,51 +129,6 @@ async function getDashboardData(loader=true) {
                         autoReload();
                     }, 60000)
                 }
-            } else {
-                // Handle other status codes
-                console.error(`Error ${status}: ${error.response.data.message}`);
-                toast.error(`Error ${status}: ${error.response.data.message}`, {
-                    autoClose: 3000,
-                    position: toast.POSITION.TOP_RIGHT,
-                });
-            }
-        } else if (error.request) {
-            // Request made but no response received
-            console.error('No response received:', error.request);
-            toast.error('No response received. Please try again later.', {
-                autoClose: 3000,
-                position: toast.POSITION.TOP_RIGHT,
-            });
-        } else {
-            // Other errors
-            console.error('Error', error);
-            toast.error(`Error: ${error.message}`, {
-                autoClose: 3000,
-                position: toast.POSITION.TOP_RIGHT,
-            });
-        }
-    }
-}
-
-async function getGateProcess(recent=true) {
-    recentMaintenanceChecklistLoader.value = true;
-    try {
-        const params = recent? {recent: recent} : {};
-        const response = await $http.get('api/v1/gateCheck', {params});
-        gateProcess.value = response.data.data.slice(0,10);
-        recentMaintenanceChecklistLoader.value = false;
-    } catch (error) {
-    recentMaintenanceChecklistLoader.value = false;
-        if (error.response) {
-            const status = error.response.status;
-            if (status === 401) {
-                // Unauthorized access, attempt to refresh token
-                await refreshToken(getGateProcess);
-            } else if(status === 429){
-                // Too Many Requests, wait for a moment and retry
-                setTimeout(() => {
-                    getGateProcess(recent=recent);
-                }, 60000);
             } else {
                 // Handle other status codes
                 console.error(`Error ${status}: ${error.response.data.message}`);
@@ -313,10 +266,10 @@ async function getActivities(loader=true) {
 
 async function getAppData(){
     getUserData();
-    //getDashboardData();
+    getDashboardData();
     //getGateProcess();
     getProjects();
-    //getActivities();
+    getActivities();
 }
 
 
@@ -349,7 +302,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    clearInterval(timer);
+  
+    if(timer){
+      clearInterval(timer);
+    }
 })
 
 </script>
@@ -357,153 +313,22 @@ onBeforeUnmount(() => {
 <template>
     
     <div class="container-fluid py-4" v-if="userData">
-      
-
-        <div class="" style="margin:0 2rem 3rem 2rem;" v-if="isSmallSize() && userData.role=='security_officer'">
-            <router-link to="security" class="bg-gradient-info shadow-info text-white " style="border:1px solid var(--bs-blue); padding:.5rem 1rem;border-radius: .5rem;">Gate Management</router-link>
-        </div>
-     
-        <div class="row" v-if="userData.role == 'security_officer' && dashboardData">
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">local_shipping</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Trucks In</p>
-                    <h4 class="mb-0">{{dashboardData.data.gateChecks.trucks_in}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span>since 24 hrs ago</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10" style="transform: scaleX(-1);">local_shipping</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Trucks Out</p>
-                    <h4 class="mb-0">{{dashboardData.data.gateChecks.trucks_out}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span>Since 24hrs ago</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10" style="transform: scaleX(-1);">factory</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Trucks in Premises</p>
-                    <h4 class="mb-0">{{dashboardData.data.gateChecks.trucks_in_premises}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span>Total trucks still in Premises</p>
-                </div>
-              </div>
-            </div>
-            
-        </div>
-
-        <div class="row" v-else-if="userData.role == 'maintenance_supervisor' && dashboardData">
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">pending</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Pending Routine Checks</p>
-                    <h4 class="mb-0">{{dashboardData.data.workOrderCount}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0" style="color:transparent;"><span class="text-success text-sm font-weight-bolder"></span>Routine walk-around check</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">person</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Assigned Jobs</p>
-                    <h4 class="mb-0">{{dashboardData.data.assignedJobs}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span>since 24 hrs ago</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-info shadow-success text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">person</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Jobs in Progress</p>
-                    <h4 class="mb-0">{{dashboardData.data.activeJobs}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-danger text-sm font-weight-bolder"></span>Current Number of Active Jobs</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-xl-3 col-sm-6">
-              <div class="card">
-                <div class="card-header p-3 pt-2">
-                  <div class="icon icon-lg icon-shape bg-gradient-success shadow-info text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">done_all</i>
-                  </div>
-                  <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Completed Jobs</p>
-                    <h4 class="mb-0">{{dashboardData.data.completedJobs}}</h4>
-                  </div>
-                </div>
-                <hr class="dark horizontal my-0">
-                <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span>since 24 hrs ago.</p>
-                </div>
-              </div>
-            </div>
-        </div>
         
-        <div class="row" v-else-if="userData.role == 'admin' && dashboardData">
+        <div class="row" v-if="userData.role == 'admin' && dashboardData">
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
               <div class="card">
                 <div class="card-header p-3 pt-2">
                   <div class="icon icon-lg icon-shape bg-gradient-dark shadow-dark text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">weekend</i>
+                    <i class="material-icons opacity-10">engineering</i>
                   </div>
                   <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Total Trucks in Premises</p>
-                    <h4 class="mb-0">$53k</h4>
+                    <p class="text-sm mb-0 text-capitalize">Total Created Projects</p>
+                    <h4 class="mb-0">{{dashboardData.data.total_created_count}}</h4>
                   </div>
                 </div>
                 <hr class="dark horizontal my-0">
                 <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+55% </span>than last week</p>
+                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span></p>
                 </div>
               </div>
             </div>
@@ -511,16 +336,16 @@ onBeforeUnmount(() => {
               <div class="card">
                 <div class="card-header p-3 pt-2">
                   <div class="icon icon-lg icon-shape bg-gradient-primary shadow-primary text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">person</i>
+                    <i class="material-icons opacity-10">assignment</i>
                   </div>
                   <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Total Jobs in Progress</p>
-                    <h4 class="mb-0">2,300</h4>
+                    <p class="text-sm mb-0 text-capitalize">Total Assigned Jobs</p>
+                    <h4 class="mb-0">{{dashboardData.data.total_assigned_count}}</h4>
                   </div>
                 </div>
                 <hr class="dark horizontal my-0">
                 <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+3% </span>than last month</p>
+                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span></p>
                 </div>
               </div>
             </div>
@@ -528,16 +353,16 @@ onBeforeUnmount(() => {
               <div class="card">
                 <div class="card-header p-3 pt-2">
                   <div class="icon icon-lg icon-shape bg-gradient-success shadow-success text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">person</i>
+                    <i class="material-icons opacity-10">fact_check</i>
                   </div>
                   <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Active Technicians</p>
-                    <h4 class="mb-0">3,462</h4>
+                    <p class="text-sm mb-0 text-capitalize">Total Completed Jobs</p>
+                    <h4 class="mb-0">{{dashboardData.data.total_completed_count}}</h4>
                   </div>
                 </div>
                 <hr class="dark horizontal my-0">
                 <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-danger text-sm font-weight-bolder">-2%</span> than yesterday</p>
+                  <p class="mb-0"><span class="text-danger text-sm font-weight-bolder"></span> </p>
                 </div>
               </div>
             </div>
@@ -545,32 +370,28 @@ onBeforeUnmount(() => {
               <div class="card">
                 <div class="card-header p-3 pt-2">
                   <div class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
-                    <i class="material-icons opacity-10">weekend</i>
+                    <i class="material-icons opacity-10">cancel_presentation</i>
                   </div>
                   <div class="text-end pt-1">
-                    <p class="text-sm mb-0 text-capitalize">Sales</p>
-                    <h4 class="mb-0">$103,430</h4>
+                    <p class="text-sm mb-0 text-capitalize">Total Cancelled Jobs</p>
+                    <h4 class="mb-0">{{dashboardData.data.total_cancelled_or_abandoned_count}}</h4>
                   </div>
                 </div>
                 <hr class="dark horizontal my-0">
                 <div class="card-footer p-3">
-                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder">+5% </span>than yesterday</p>
+                  <p class="mb-0"><span class="text-success text-sm font-weight-bolder"></span></p>
                 </div>
               </div>
             </div>
         </div>
 
           <div class="row mt-4">
-           <MiddleCharts :userData="userData" v-if="userData.role == 'admin'" />
+            
+           <MiddleCharts :userData="userData" :chartData="dashboardData" v-if="userData.role == 'admin' && dashboardData" />
           </div>
 
           <div class="row mb-4">
             <div class="col-lg-8 col-md-12 mb-md-0 mb-4">
-
-
-
-
-
 
               <div class="card">
                 <div class="card-header pb-0">
@@ -580,7 +401,7 @@ onBeforeUnmount(() => {
                       <h6 v-else>Recently Assigned Projects</h6>
                     </div>
                     <div class="col-lg-6 col-5 my-auto text-end d-lg-block text-sm" v-if="userData.role=='admin'">
-                        <span style="text-decoration: underline;color:var(--bs-blue);cursor:pointer">View All</span>
+                        <router-link to="/projects" style="text-decoration: underline;color:var(--bs-blue);cursor:pointer">View All</router-link>
                     </div>
                     <div class="col-lg-6 col-5 my-auto text-end d-none" >
                       <div class="dropdown float-lg-end pe-4">
@@ -648,94 +469,12 @@ onBeforeUnmount(() => {
                        
                       </tbody>
                     </table>
-                    <div class="table-loader" v-if="recentMaintenanceChecklistLoader">
-                        <div class="loader"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-              <div class="card my-3" style="" v-if="userData.role=='maintenance_supervisor'">
-                <div class="card-header pb-0">
-                  <div class="row">
-                    <div class="col-lg-6 col-7">
-                      <h6 v-if="userData.role=='maintenance_supervisor'">Recent Jobs</h6>
-                  
-                    </div>
-                    <div class="col-lg-6 col-5 my-auto text-end d-none" >
-                      <div class="dropdown float-lg-end pe-4">
-                        <a class="cursor-pointer" id="dropdownTable" data-bs-toggle="dropdown" aria-expanded="false">
-                          <i class="fa fa-ellipsis-v text-secondary"></i>
-                        </a>
-                        <ul class="dropdown-menu px-2 py-3 ms-sm-n4 ms-n5" aria-labelledby="dropdownTable">
-                          <li><a class="dropdown-item border-radius-md" href="javascript:;">Action</a></li>
-                          <li><a class="dropdown-item border-radius-md" href="javascript:;">Another action</a></li>
-                          <li><a class="dropdown-item border-radius-md" href="javascript:;">Something else here</a></li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-body px-0 pb-2">
-                  <div class="table-responsive">
-                    <table class="table align-items-center mb-0">
-                      <thead>
-                        <tr>
-                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Fault Code</th>
-                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Fault Description</th>
-                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Truck Number</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Job status</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Job Technician</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Job Duration</th>
-                          <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date Added</th>
-                        </tr>
-                      </thead>
-                      <tbody v-if="jobs && jobs.data.length > 0">
-                        <tr v-for="job in jobs.data" :key="job">
-                          <td>
-                            <div class="d-flex px-4 py-1 font-weight-bold" style="color:var(--bs-primary);">
-                                {{job.fault_code}}
-                            </div>
-                          </td>
-                          <td class="align-middle text-center t">
-                            {{job.description}}
-                          </td>
-                          <td class="align-middle text-center text-sm">
-                            <span class="text-xs font-weight-bold" > {{job.truck_number}}</span>
-                          </td>
-                          <td class="align-middle text-center text-sm">
-                           
-                            <span class="badge badge-sm bg-gradient-info" v-if="job.status=='in_progress'">{{ job.status }}</span>
-                            <span class="badge badge-sm bg-gradient-success" v-else-if="job.status=='completed'">{{ job.status }}</span>
-                            <span class="badge badge-sm bg-gradient-danger" v-else-if="job.status=='cancelled'">{{ job.status }}</span>
-                            <span class="badge badge-sm bg-gradient" style="background:var(--bs-orange)" v-else>{{ job.status }}</span>
-                          </td>
-                          <td class="align-middle text-center text-sm">
-                          
-                            <span class="text-xs font-weight-bold" style="text-transform:capitalize">{{job.job_technician.last_name}} {{job.job_technician.first_name}}</span>
-                          </td>
-                          <td class="align-middle text-center text-sm">
-                          
-                            <span class="text-xs font-weight-bold" >{{job.expected_job_duration_in_hours}} Hrs</span>
-                          </td>
-                          <td class="align-middle text-center text-sm">
-                            <div class="d-flex px-4 py-1" >
-                                <span class="text-xs font-weight-bold" >{{moment(job.job_added).format("DD MMM, YYYY. hh:mm A")}}</span>
-                            </div>
-                            
-                          </td>
-                        </tr>
-                       
-                      </tbody>
-                    </table>
                     <div class="table-loader" v-if="recentProjectsLoader">
                         <div class="loader"></div>
                     </div>
                   </div>
                 </div>
               </div>
-
 
             </div>
             
@@ -749,10 +488,10 @@ onBeforeUnmount(() => {
 
                     <div class="timeline-block mb-3" v-for="activity in activities" :key="activity">
                       <span class="timeline-step">
-                        <i class="material-icons text-yellow text-gradient" style="color:var(--bs-yellow);" v-if="activity.status=='pending'">{{activity.icon_tag}}</i>
-                        <i class="material-icons text-danger text-gradient" v-else-if="activity.status == 'cancelled'">{{activity.icon_tag}}</i>
-                        <i class="material-icons text-success text-gradient" v-else-if="activity.status == 'success'">{{activity.icon_tag}}</i>
-                        <i class="material-icons text-info text-gradient" v-else>{{activity.icon_tag}}</i>
+                        <i class="material-icons text-orange text-gradient" style="color:var(--bs-orange);" v-if="activity.status=='pending'">notifications</i>
+                        <i class="material-icons text-danger text-gradient" v-else-if="activity.status == 'cancelled'">notifications</i>
+                        <i class="material-icons text-success text-gradient" v-else-if="activity.status == 'success'">notifications</i>
+                        <i class="material-icons text-info text-gradient" v-else>notifications</i>
                       </span>
                       <div class="timeline-content">
                         <h6 class="text-dark text-sm font-weight-bold mb-0">{{ activity.message }}</h6>

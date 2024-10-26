@@ -1,17 +1,24 @@
 <script setup>
-import { ref, defineProps, defineEmits, onMounted } from 'vue'
-
+import { ref, defineProps, defineEmits, onMounted, watch, nextTick } from 'vue'
+import moment from 'moment';
 
 
 const chartBars = ref(null);
 const chartLineTasks = ref(null);
 const chartLine = ref(null);
 
+
+
 const props = defineProps({
   userData: {
     type: Object,
     required: true,
   },
+  chartData: {
+    type: Object,
+    required: true,
+  },
+  
   
 });
 
@@ -24,15 +31,15 @@ const enableChartBars = () => {
     new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
         datasets: [{
-          label: "Jobs",
+          label: "Created Projects",
           tension: 0.4,
           borderWidth: 0,
           borderRadius: 4,
           borderSkipped: false,
           backgroundColor: "rgba(255, 255, 255, .8)",
-          data: [50, 20, 10, 22, 50, 10, 40],
+          data: props.chartData ? props.chartData.data.created_count:[] ,
           maxBarThickness: 6
         }],
       },
@@ -108,9 +115,9 @@ const enableChartLine = () => {
     new Chart(ctx2, {
       type: "line",
       data: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        labels: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
         datasets: [{
-          label: "Mobile apps",
+          label: "Assigned Projects",
           tension: 0,
           borderWidth: 0,
           pointRadius: 5,
@@ -121,7 +128,7 @@ const enableChartLine = () => {
           borderWidth: 4,
           backgroundColor: "transparent",
           fill: true,
-          data: [50, 40, 300, 320, 500, 350, 200,],
+          data: props.chartData ? props.chartData.data.assigned_count:[] ,
           maxBarThickness: 6
 
         }],
@@ -194,9 +201,9 @@ const enableChartLineTasks = () => {
     new Chart(ctx3, {
       type: "line",
       data: {
-        labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        labels: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
         datasets: [{
-          label: "Mobile apps",
+          label: "Completed Projects",
           tension: 0,
           borderWidth: 0,
           pointRadius: 5,
@@ -206,7 +213,7 @@ const enableChartLineTasks = () => {
           borderWidth: 4,
           backgroundColor: "transparent",
           fill: true,
-          data: [50, 40, 300, 220, 500, 250, 400, 230, 500],
+          data: props.chartData ? props.chartData.data.completed_count:[] ,
           maxBarThickness: 6
 
         }],
@@ -272,11 +279,55 @@ const enableChartLineTasks = () => {
     });
 }
 
+
+
+
+const getTodayPercent = (value) => {
+  let percentage;
+  const today = new Date().getDay()
+  if(today > 0){
+    percentage = ((value[today] - value[today - 1]) * 100) / value[today - 1]
+  }
+  return percentage
+}
+
+
+
+watch(
+  () => props.chartData,
+  (newVal) => {
+    if (newVal && newVal.data) {
+      nextTick(() => {
+        if (newVal.data.created_count) {
+          enableChartBars();
+        }
+        if (newVal.data.assigned_count) {
+          enableChartLine();
+        }
+        if (newVal.data.completed_count) {
+          enableChartLineTasks();
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(() => {
-  enableChartBars();
-  enableChartLine();
-  enableChartLineTasks();
-})
+  nextTick(() => {
+    if (props.chartData && props.chartData.data) {
+      if (props.chartData.data.created_count) {
+        enableChartBars();
+      }
+      if (props.chartData.data.assigned_count) {
+        enableChartLine();
+      }
+      if (props.chartData.data.completed_count) {
+        enableChartLineTasks();
+      }
+    }
+  });
+});
 
 </script>
 
@@ -290,13 +341,13 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="card-body">
+      <div class="card-body" v-if="props.chartData">
         <h6 class="mb-0 ">Created Projects</h6>
         <p class="text-sm ">Projects created this week</p>
         <hr class="dark horizontal">
         <div class="d-flex ">
-          <i class="material-icons text-sm my-auto me-1">calendar</i>
-          <p class="mb-0 text-sm"> From 12th Jan 2022 - 19th Jan 2022</p>
+          <i class="material-icons text-sm my-auto me-1">event</i>
+          <p class="mb-0 text-sm"> From {{moment(chartData.data.week_start).format("Do MMM, YYYY")}} - {{moment(chartData.data.week_end).format("Do MMM, YYYY")}}</p>
         </div>
       </div>
     </div>
@@ -310,14 +361,11 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="card-body">
+      <div class="card-body" v-if="props.chartData">
         <h6 class="mb-0 "> Assigned Projects </h6>
-        <p class="text-sm "> (<span class="font-weight-bolder">+15%</span>) increase in today sales. </p>
+        <p class="text-sm "> (<span class="font-weight-bolder">{{getTodayPercent(props.chartData.data.assigned_count)}}%</span>) increase in assigned Projects </p>
         <hr class="dark horizontal">
-        <div class="d-flex ">
-          <i class="material-icons text-sm my-auto me-1">schedule</i>
-          <p class="mb-0 text-sm"> updated 4 min ago </p>
-        </div>
+    
       </div>
     </div>
   </div>
@@ -330,14 +378,11 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="card-body">
+      <div class="card-body" v-if="props.chartData">
         <h6 class="mb-0 ">Completed Projects</h6>
-        <p class="text-sm ">Last Campaign Performance</p>
+        <p class="text-sm ">Completed Projects by Users</p>
         <hr class="dark horizontal">
-        <div class="d-flex ">
-          <i class="material-icons text-sm my-auto me-1">schedule</i>
-          <p class="mb-0 text-sm">just updated</p>
-        </div>
+       
       </div>
     </div>
   </div>
