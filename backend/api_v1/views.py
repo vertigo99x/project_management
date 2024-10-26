@@ -3,12 +3,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser 
+from rest_framework.parsers import JSONParser 
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
 from .models import Project
 from .serializers import ProjectSerializer
 from django.shortcuts import get_object_or_404
+from django.utils.timezone import now, timedelta
+from django.db.models import Count
+
 
 class CustomPagination(PageNumberPagination):
     page_size = 10  
@@ -26,13 +29,15 @@ class ProjectView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         
+        role = getattr(user, 'role', 'user') 
+        
         search_query = request.query_params.get('search')
         project_status = request.query_params.get('status')
         project_priority = request.query_params.get('priority')
         assigned_to_id = request.query_params.get('assigned_to')
         order = request.query_params.get('order')
         
-        order_list = ['date_created', '-date_created']
+        order_list = ['date_created', ]
         if order not in order_list:
             order = 'date_created'
         
@@ -54,7 +59,7 @@ class ProjectView(APIView):
         if assigned_to_id:
             filters['assigned_to__id'] = assigned_to_id
 
-        if user.role == 'admin':
+        if role == 'admin':
             filters['created_by'] = user
         else:
             filters['assigned_to'] = user
@@ -117,3 +122,63 @@ class ProjectView(APIView):
                 "data": None,
             }
         return Response(response_data, status=status.HTTP_204_NO_CONTENT)
+    
+    
+class DashboardData(APIView):
+    parser_classes = [JSONParser]
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        role = getattr(user, 'role', 'user')  
+
+        current_date = now()
+        start_of_week = current_date - timedelta(days=current_date.weekday() + 1)  
+        start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+        created_count = [0] * 7
+        assigned_count = [0] * 7
+        completed_count = [0] * 7
+
+        
+        if role == 'admin':
+            created_projects = Project.objects.filter(created_by=user, date_created__range=[start_of_week, end_of_week])
+            completed_projects = Project.objects.filter(created_by=user, status='done', date_created__range=[start_of_week, end_of_week])
+            assigned_projects = Project.objects.filter(assigned_to__isnull=False, created_by=user, date_created__range=[start_of_week, end_of_week])
+            for project in created_projects:
+                day_of_week = (project.date_created.weekday() + 1) % 7
+                created_count[day_of_week] += 1
+            for project in completed_projects:
+                day_of_week = (project.date_created.weekday() + 1) % 7
+                completed_count[day_of_week] += 1
+            for project in assigned_projects:
+                day_of_week = (project.date_created.weekday() + 1) % 7
+                assigned_count[day_of_week] += 1
+
+        else:
+            assigned_projects = Project.objects.filter(assigned_to=user, date_created__range=[start_of_week, end_of_week])
+            completed_projects = Project.objects.filter(assigned_to=user, status='done', date_created__range=[start_of_week, end_of_week])
+            for project in assigned_projects:
+                day_of_week = (project.date_created.weekday() + 1) % 7
+                assigned_count[day_of_week] += 1
+            for project in completed_projects:
+                day_of_week = (project.date_created.weekday() + 1) % 7
+                completed_count[day_of_week] += 1
+                
+        start_date_iso = start_of_week.date().isoformat()  
+        end_date_iso = end_of_week.date().isoformat()      
+
+        response_data = {
+            "status": True,
+            "message": "Weekly project stats",
+            "data": {
+                "created_count": created_count if role == 'admin' else None, 
+                "assigned_count": assigned_count,  
+                "completed_count": completed_count,
+                "week_start": start_date_iso,
+                "week_end": end_date_iso  
+            }
+        }
+        return Response(response_data)

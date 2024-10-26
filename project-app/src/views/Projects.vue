@@ -17,67 +17,35 @@ const store = useStore();
 const isLoading = ref(false);
 const userData = ref(null);
 const searchText = ref('');
+const searchUsersText = ref('');
 const recentProjectsLoader = ref(false);
+const recentUsersLoader = ref(false);
 
 const status = ref('');
 const order = ref('');
 const priority = ref('');
 
-const isCreateGateProcess = ref(false);
-const confirmSubmitWorkOrder = ref(false);
-const selectedTruck = ref(null);
+const showUsersModal = ref(false);
+const confirmDeleteProject = ref(false);
+const showCreateProjectModal = ref(false);
+
 const projects = ref(null);
+const users = ref(null);
 const visitation_purpose_type = ref('');
 const currentTabIndex = ref(0);
 const currentList = ref(1);
 const reg = ref(null);
+const mode = ref('create');
 
-const routineCount = ref(0);
-const routinePagesCount = ref(0);
-const totalNumberPerPage = ref(0);
 
-const selectedTruckData = ref({
-                electrical_system:"",
-                air_cleaner:"",
-                air_tank:"",
-                water_filter:"",
-                axle_hub_lubricant:"",
-                coolant_level:"",
-                transmission_oil_level:"",
-                engine_oil_level:"",
-                chassis_beams:null,
-                kingpin:null,
-                trailer_connecting_hose:null,
-                hydrometer_and_diesel_tank:null,
-                tractor_brake:null,
-                transmission_fluid_level:null,
-                gearbox_oil_level:null,
-                axle_tank_and_disch_water:null,
-                trailer_air_valve_leakage:null,
-                wheel_studs:null,
-                brake_lining:null,
-                hub_covers:null,
-                spring_center_bolt:null,
-                equalizer:null,
-                shock_absorbers:null,
-                shackle_pins:null,
-                overall_trailer_appearance:null,
-                fan_belt_tension:null,
-                pulley_for_clearance:null,
-                tie_rod_clearance:null,
-                oil_leakage:null,
-                coolant_spills_leaks:null,
-                air_cleaner_housing:null,
-                air_leakage:null,
-                dashboard_functions:null,
-                air_pressure:null,
-                oil_pressure:null,
-                water_temperature:null,
-                exhaust_leakage:null,
-                front_shock_absorber:null,
-                cab_barrel:null,
-            })
-
+const projectData = ref({
+  id:null,
+  project_name:'',
+  project_description:'',
+  assigned_to:null,
+  project_status:'',
+  project_priority:'',
+})
 
 
 async function refreshToken(callback) {
@@ -110,7 +78,7 @@ async function getProjects(page=null, extraparams=null){
         params = {...params,...extraparams}
         }
 
-        const response = await $http.get('api/v1/projects', {params})
+        const response = await $http.get('api/v1/projects/', {params})
         projects.value = response.data
         recentProjectsLoader.value=false;
 
@@ -123,10 +91,64 @@ async function getProjects(page=null, extraparams=null){
                     await refreshToken(getProjects);
                 } else if(status === 429){
                 // Too Many Requests, wait for a moment and retry
-                console.error(`Too many requests. try again in a minute`)
+                console.error(`Too many requests. try again in a moment`)
                 setTimeout(() => {
                     getProjects(page, extraparams);
-                }, 60000);
+                }, 1000);
+            } else {
+                    // Handle other status codes
+                    console.error(`Error ${status}: ${error.response.data.message}`);
+                    toast.error(`Error ${status}: ${error.response.data.message}`, {
+                        autoClose: 3000,
+                        position: toast.POSITION.TOP_RIGHT,
+                    });
+                }
+            } else if (error.request) {
+                // Request made but no response received
+                console.error('No response received:', error.request);
+                toast.error('No response received. Please try again later.', {
+                    autoClose: 3000,
+                    position: toast.POSITION.TOP_RIGHT,
+                });
+            } else {
+                // Other errors
+                console.error('Error', error);
+                toast.error(`Error: ${error.message}`, {
+                    autoClose: 3000,
+                    position: toast.POSITION.TOP_RIGHT,
+                });
+            }
+    }
+}
+
+async function getUsers(page=null, extraparams=null){
+    let params = {}
+    recentUsersLoader.value=true;
+    try{
+        if (page){
+        params.page=page;
+        }
+        if(extraparams){
+        params = {...params,...extraparams}
+        }
+
+        const response = await $http.get('accounts/users', {params})
+        users.value = response.data
+        recentUsersLoader.value=false;
+
+    } catch (error){
+        recentUsersLoader.value=false;
+            if (error.response) {
+                const status = error.response.status;
+                if (status === 401) {
+                    // Unauthorized access, attempt to refresh token
+                    await refreshToken(getUsers);
+                } else if(status === 429){
+                // Too Many Requests, wait for a moment and retry
+                console.error(`Too many requests. try again in a moment`)
+                setTimeout(() => {
+                    getUsers(page, extraparams);
+                }, 1000);
             } else {
                     // Handle other status codes
                     console.error(`Error ${status}: ${error.response.data.message}`);
@@ -194,50 +216,56 @@ async function getUserData() {
     }
 }
 
-async function submitWorkOrder(truckData) {
-    if(status.value == 'pending'){
-              //this.tableLoader=true;
-          
-              if(Object.keys(truckData).includes('value')){
-            delete(truckData.value)
-          }
-          if(!selectedTruckData.electrical_system || !selectedTruckData.air_tank ||
-                !selectedTruckData.air_cleaner || !selectedTruckData.water_filter ||
-                !selectedTruckData.axle_hub_lubricant || !selectedTruckData.coolant_level ||
-                !selectedTruckData.transmission_oil_level || !selectedTruckData.engine_oil_level
-          ){
-            toast.error("Fill in the required Fields", {
-                    autoClose: 3000,
-                    position: toast.POSITION.TOP_RIGHT,
-                });
-                return ;
-          }
-    try {
-        const data = {
-            work_order_uuid:selectedTruck.value.uuid,
-            work_order:truckData
+async function submitProject(action='create') {
+    
+        if(!projectData.value.project_name || !projectData.value.project_description
+        || !projectData.value.project_priority
+        ){
+          toast.error("Fill in the required Fields", {
+                  autoClose: 3000,
+                  position: toast.POSITION.TOP_RIGHT,
+              });
+              return ;
         }
-        const response = await $http.put('api/v1/work-order', data);
-        document.querySelector(`#work-order${selectedTruck.value.uuid}`).remove()
-        toast.info(response.data.message, {
+    try {
+      isLoading.value = true;
+        const data = {
+            "project_name": projectData.value.project_name,
+            "project_description": projectData.value.project_description,
+            "status": null,
+            "priority": projectData.value.project_priority.toLowerCase(),
+            "assigned_to_id": projectData.value.assigned_to ? projectData.value.assigned_to.id : null
+        }
+
+        let response = action === 'create' ? await $http.post('api/v1/projects/create/', data) : action === 'update' ? await $http.put(`api/v1/projects/update/${projectData.value.id}/`, data) : action === 'delete' ? await $http.delete(`api/v1/projects/delete/${projectData.value.id}/`) : null
+        
+        
+        toast.info(action === 'delete' ? "Project was Deleted successfully" : response.data.message, {
                     autoClose: 3000,
                     position: toast.POSITION.TOP_RIGHT,
                 });
         //tableLoader=false;
-        confirmSubmitWorkOrder.value=false;
-        resetCheckList();
-        isCreateGateProcess.value=false;
-        routineCount.value += 1;
-        if(routineCount.value >= totalNumberPerPage.value / 2 && totalNumberPerPage > 1 && totalNumberPerPage.value > 1){
-            getProjects(order == 'recent'? true:false)
-        }
+        projectData.value.project_name='';
+        projectData.value.project_description='';
+        projectData.value.project_status='';
+        projectData.value.project_priority='';
+        projectData.value.assigned_to=null;
+        status.value='';
+        order.value='';
+        priority.value='';
+        searchText.value='';
+        confirmDeleteProject.value=false;
+        showCreateProjectModal.value=false;
+        getProjects();
+        isLoading.value = false;
+        
     } catch (error) {
-    
+      isLoading.value = false;
         if (error.response) {
             const status = error.response.status;
             if (status === 401) {
                 // Unauthorized access, attempt to refresh token
-                await refreshToken(submitWorkOrder);
+                await refreshToken(submitProject(action));
             } else {
                 // Handle other status codes
                 console.error(`Error ${status}: ${error.response.data.message}`);
@@ -262,8 +290,8 @@ async function submitWorkOrder(truckData) {
             });
         }
     }
-    }
-}
+  }
+
 
 
 
@@ -272,15 +300,21 @@ const setisCreateGateProcess = (val) => {
     isCreateGateProcess.value = val;
 }
 
-const selectTruck = (val) => {
-    selectedTruck.value = val;
-    if(status.value === 'completed'){
-        selectedTruckData.value = val.work_order
-        if(Object.keys(selectedTruckData.value).includes('value')){
-            delete(selectedTruckData.value.value)
-          }
+const selectProject = (item) => {
+    projectData.value = {
+        id:item.uuid,
+        project_name:item.project_name,
+        project_description:item.project_description,
+        project_priority:item.priority,
+        assigned_to:item.assigned_to ? {
+          last_name:item.assigned_to.last_name,
+          first_name:item.assigned_to.first_name,
+        } : null,
+        project_status: item.project_status || null,
         
-    }
+      }
+      mode.value = 'update';
+      showCreateProjectModal.value = true;
 }
 
 const resetCheckList = () => {
@@ -351,6 +385,7 @@ onMounted(() => {
     store.commit('setCurrentPage', 'projects')
     getUserData();
     getProjects();
+    getUsers();
 })
 
 
@@ -369,12 +404,12 @@ onMounted(() => {
                     <span>{{status || "All"}}</span>
                     Projects
                   </h6>
-                  <button style="background:var(--bs-primary);color:#fff;border:1px solid var(--bs-primary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="showCreateProjectModal=true">Create Project+</button>
+                  <button style="background:var(--bs-primary);color:#fff;border:1px solid var(--bs-primary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="mode='create';showCreateProjectModal=true">Create Project+</button>
                 </div>
                 <div class="searchbar my-3">
-                    <input type="text" class="" @keyup.enter="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='',order='';priority='';"  v-model="searchText" placeholder="Search Table" >
-                    <button style="background:var(--bs-success);color:#fff;border:1px solid var(--bs-success);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='',order='';priority='';">Search</button>
-                    <button style="background:var(--bs-secondary);color:#fff;border:1px solid var(--bs-secondary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" class="reset-table" @click="status='',order='';priority='';searchText='';getProjects()">Reset Table</button>
+                    <input type="text" class="" @keyup.enter="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='';order='';priority='';"  v-model="searchText" placeholder="Search Table" >
+                    <button style="background:var(--bs-success);color:#fff;border:1px solid var(--bs-success);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="getProjects(null, {status:'', priority:'', order:'', search:searchText});status='';order='';priority='';">Search</button>
+                    <button style="background:var(--bs-secondary);color:#fff;border:1px solid var(--bs-secondary);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" class="reset-table" @click="status='';order='';priority='';searchText='';getProjects()">Reset Table</button>
                     
                     
                 </div>
@@ -422,7 +457,7 @@ onMounted(() => {
                     
                     <tbody v-if="projects">
                       <tr v-for="item in projects.data" :key="item">
-                        
+
                         <td>
                           <div class="d-flex px-4 py-1 font-weight-bold" style="color:var(--bs-primary);text-transform: capitalize;">
                               {{item.project_name}}
@@ -432,7 +467,7 @@ onMounted(() => {
                           {{item.project_description.length >=25 ? item.project_description.slice(0,25) : item.project_description}}
                         </td>
                         <td class="align-middle text-center text-sm" v-if="userData.role=='admin'">
-                          <span class="text-xs font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
+                          <span class="text-secondary font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
                           <span class="text-info font-weight-bold" style="cursor: pointer;"  v-else>Assign User</span>
                         </td>
                         <td class="align-middle text-center text-sm">
@@ -445,7 +480,7 @@ onMounted(() => {
                         <td class="align-middle text-center text-sm">
                           <span class="badge badge-sm bg-gradient-success" v-if="item.priority=='low'">Low</span>
                           <span class="badge badge-sm bg-gradient-danger" v-else-if="item.priority=='high'">High</span>
-                          <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else-if="item.priority=='mid'">Abandoned</span>
+                          <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else-if="item.priority=='mid'">Mid</span>
                           <span class="badge badge-sm bg-gradient-secondary" style="background:var(--bs-orange)"  v-else>No Priority</span>
                         </td>
                         <td class="align-middle text-center text-sm">
@@ -454,7 +489,8 @@ onMounted(() => {
                         <td class="align-middle text-center text-sm">
                           <span class="text-xs font-weight-bold" :class="{'redify':false}"></span>
                         </td>
-                        <td></td>
+                        <td><button style="background:var(--bs-info);color:#fff;border:1px solid var(--bs-info);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="selectProject(item)">View</button>
+                        </td>
                       </tr>
                       
                      
@@ -491,501 +527,182 @@ onMounted(() => {
         </div>
         
 
-
-
-
-        <div class="content-modal" v-if="isCreateGateProcess">
-            <div class="modal-content" v-if="currentTabIndex == 0">
-              <div class="close-button">
-                <span class="svg-icon"
-                  ><svg
-                    @click="isCreateGateProcess = false"
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="48"
-                    viewBox="0 -960 960 960"
-                    width="48"
-                  >
-                    <path
-                      d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
-                    /></svg
-                ></span>
-              </div>
-              <div id="reg">
-                <form
-                  class="add-gatein-form"
-                  @submit.prevent="submitForm"
-                  id="add-gatein-form"
-                  ref="addgateinForm"
+        <div class="content-modal" v-if="showCreateProjectModal">
+          <div class="modal-content">
+            <div class="close-button">
+              <span class="svg-icon"
+                ><svg
+                  @click="showCreateProjectModal = false"
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="48"
+                  viewBox="0 -960 960 960"
+                  width="48"
                 >
-                  <h3 class="title">Gate In Process Form</h3>
-                  <div class="field2 d-flex flex-column" style="margin-top:.5rem;">
-                    <label for="">Truck No.</label>
-                    <input
-                      type="text"
-                      placeholder="Truck No."
-                      :value="selectedTruck.truck.truck_number"
-                      required
-                      disabled
-                      style="margin-top:-.5rem;font-size:18px"
-                    />
-                  </div>
-                  <div class="field2 d-flex flex-column" style="margin-top:.5rem;">
-                    <label for="">Visitation Purpose Type</label>
-                    <select name="" id="" v-model="visitation_purpose_type" style="margin-top:-.5rem;">
-                      <option value="" selected disabled>
-                        Select Visitation Purpose Type
-                      </option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="tyre collection">Tyre Collection</option>
-                      <option value="tarpaulin collection">Tarpaulin Collection</option>
-                      <option value="parking">Parking</option>
-                    </select>
-                  </div>
-                </form>
-                <button @click="this.currentTabIndex = 1;" v-if="visitation_purpose_type == 'maintenance'">
-                  Generate Work Order <i class="fa-solid fa-list-check"></i>
-                </button>
-                <button @click="next();" v-else>
-                  Next <i class="material-icons"></i>
-                </button>
+                  <path
+                    d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
+                  /></svg
+              ></span>
+            </div>
+
+            <div id="reg">
+             
+              <div class="field2">
+                
+                <div class="checklist">
+                  <span>Project Name:</span>
+                  <input
+                    type="text"
+                    id="project_name"
+                    v-model="projectData.project_name"
+                  />
+                </div>
+                <div class="checklist">
+                  <span>Project Description:</span>
+                  <textarea  style="resize:none;" name="" id="" cols="30" rows="10" v-model="projectData.project_description"></textarea>
+                </div>
+                <div class="checklist d-flex">
+                  <span>User:</span>
+                  <span class="mx-2 text-info" style="text-transform: capitalize;" v-if="projectData.assigned_to">{{projectData.assigned_to.last_name}} {{projectData.assigned_to.first_name}}</span>
+                  <span class="mx-2 text-secondary" style="cursor: pointer;text-decoration: underline;" v-if="projectData.assigned_to" @click="showUsersModal=true">Change User?</span>
+                  <span class="mx-2 text-info" style="cursor: pointer;text-decoration: underline;" v-else @click="showUsersModal=true">Assign User</span>
+                </div>
+                <div class="px-2">
+                  <span>Priority:</span>
+                  <select class="mx-2" name="" id="" v-model="projectData.project_priority">
+                    <option value="">Select Priority</option>
+                    <option value="low">Low</option>
+                    <option value="mid">Mid</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+
+                <div class="checklist buttons">
+                  <button style="text-transform: capitalize;" v-if="mode == 'create'" @click="submitProject()">Create Project +</button>
+                  <button style="text-transform: capitalize;" v-else-if="mode == 'update'" @click="submitProject('update')">Update Project</button>
+                  <button  style="text-transform: capitalize;background:var(--bs-danger);" v-if="mode === 'update'" @click="confirmDeleteProject=true">Delete Project</button>
+                </div>
               </div>
             </div>
-      
-      
-            <div class="modal-content" id="multi-modal"  style="max-width:55rem;width:100%;" v-if="currentTabIndex == 1">
-              <div class="close-button">
-                <span class="svg-icon"
-                  ><svg
-                    @click="resetCheckList();isCreateGateProcess = false"
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="48"
-                    viewBox="0 -960 960 960"
-                    width="48"
-                  >
-                    <path
-                      d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
-                    /></svg
-                ></span>
-              </div>
-              <div id="reg" ref="reg" class="reg" :class="{'completed':status=='completed'}">
-                <form
-                  class="add-gatein-form"
-                  @submit.prevent="submitForm"
-                  id="add-gatein-form"
-                  ref="addgateinForm"
-                >
-                <h3 class="title">Fault Recording</h3>
-                <div class="page-marker">
-                    
-                  <ul id="progressbar">
-                    <li :class="{'active':currentList>=1}">Routine Maintenance Checklist </li>
-                    <li :class="{'active':currentList>=2}">Chassis</li>
-                    <li :class="{'active':currentList>=3}">Semi Trailers</li>
-                    <li :class="{'active':currentList>=4}">Engine/Cabin</li>
-                  </ul>
-                </div>
-      
-                  
-                  <div class="field2" style="display:flex;flex-direction:column;">
-                    
-                    <label for="" style="font-weight:bold;font-size: 18px;">Truck No.</label>
-                    <input
-                      type="text"
-                      placeholder="Truck No."
-                      :value="selectedTruck.truck.truck_number"
-                      required
-                      disabled
-                      id="truck-no"
-                      style="font-weight:bold;font-size: 18px;color:var(--primary);letter-spacing:1px"
-                    />
-                   
-                  </div>
-                  
-                  <div class="list-1" v-if="currentList==1">
-                    <h4 style="margin:2rem 0 1rem 0;font-weight:600;">Routine Maintenance Checklist</h4>
-      
-                    <div class="field2">
-                      <div class="checklist">
-                        <label for="">&nbsp;Electrical System </label>
-                        <select name="" id="" v-if="status=='pending'" :disabled="status=='completed'" v-model="selectedTruckData.electrical_system">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.electrical_system.replace('_',' ') || "None"}}</p>
-                     
-                      </div>
-                      <div class="checklist">
-                        <label for="">&nbsp;Air Cleaner</label>
-                        <select name="" id="" v-if="status=='pending'" :disabled="status=='completed'" v-model="selectedTruckData.air_cleaner">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.air_cleaner.replace('_',' ') || "None"}}</p>
-                     
-                      </div>
-                      <div class="checklist">
-                        <label for="">&nbsp;Air Tank</label>
-                        <select name="" id="" v-if="status=='pending'" :disabled="status=='completed'" v-model="selectedTruckData.air_tank">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.air_tank.replace('_',' ') || "None"}}</p>
-                     
-                      </div>
-                      <div class="checklist">
-                        <label for="">&nbsp;Water Filter</label>
-                        <select name="" id="" v-if="status=='pending'"  :disabled="status=='completed'" v-model="selectedTruckData.water_filter">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.water_filter.replace('_',' ') || "None"}}</p>
-                     
-                      </div>
-                      
-                    </div>
-                    
-                    <div class="field2">
-                      <div class="checklist">
-                        <label for="">&nbsp;Axle Hub Lubricant</label>
-                        <select name="" id="" v-if="status=='pending'" :disabled="status=='completed'" v-model="selectedTruckData.axle_hub_lubricant">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.axle_hub_lubricant.replace('_',' ') || "None"}}</p>
-                     
-                      </div>
-                      <div class="checklist">
-                        <label for="">&nbsp;Coolant Level</label>
-                        <select name="" id=""  v-if="status=='pending'" :disabled="status=='completed'" v-model="selectedTruckData.coolant_level">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.coolant_level.replace('_',' ') || "None"}}</p>
-                     
-                      </div>
-                      <div class="checklist">
-                        <label for="">&nbsp;Transmission Oil Level</label>
-                        <select name="" id="" v-if="status=='pending'"  :disabled="status=='completed'" v-model="selectedTruckData.transmission_oil_level">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="">Maintenance</option>
-                          <option value="">Tyre Collection</option>
-                          <option value="">Tarpaulin Collection</option>
-                          <option value="">Parking</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.transmission_oil_level.replace('_',' ') || 'None'}}</p>
-                     
-                      </div>
-                      <div class="checklist" >
-                        <label for="">&nbsp;Engine Oil Level</label>
-                        <select name="" id="" v-if="status=='pending'"  :disabled="status=='completed'" v-model="selectedTruckData.engine_oil_level">
-                          <option value="" selected disabled>
-                            Select Option
-                          </option>
-                          <option value="replaced">Replaced</option>
-                          <option value="topped_up">Topped Up</option>
-                          <option value="bled">Bled</option>
-                          <option value="blown">Blown</option>
-                          <option value="checked">Checked</option>
-                          <option value="yes">Yes</option>
-                          <option value="no">No</option>
-                        </select>
-                        <p v-else style="color:var(--bs-primary);text-transform:capitalize;text-align:center;">{{selectedTruckData.engine_oil_level.replace('_',' ') || "None"}}</p>
-                      </div>
-                      
-                    </div>
-      
-                    <div class="buttonbox">
-                      <button style="" class="ghost-button">
-                        
-                      </button>
-                      <button @click="currentList = 2;modalScrollTop()" class="next-page">
-                        Next Page <i class="material-icons"></i>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  
-                  <div class="list-2" v-if="currentList==2">
-                    <h4 style="margin:2rem 0 1rem 0;font-weight:600;">Chassis</h4>
-      
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                      <label for="">&nbsp;Chassis Beams</label>
-                      <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.chassis_beams">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                      <label for="">&nbsp;Kingpin</label>
-                      <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.kingpin">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Trailer Connecting Hose</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.trailer_connecting_hose">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Hydrometer & Diesel Tank</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.hydrometer_and_diesel_tank">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    
-                  </div>
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Tractor Brake</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.tractor_brake">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Transmission Fluid Level</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.transmission_fluid_level">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Gearbox Oil Level</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.gearbox_oil_level">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Axle Tank & Disch. Water</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.axle_tank_and_disch_water">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                  </div>
-                  <div class="buttonbox">
-                    <button @click="currentList = 1;modalScrollTop()">
-                     <i class="material-icons"></i> Back 
-                    </button>
-                    <button @click="currentList = 3;modalScrollTop()" class="next-page">
-                      Next Page <i class="material-icons"></i>
-                    </button>
-                  </div>
-                  </div>
-      
-      
-                  <div class="list-3" v-if="currentList==3">
-                    <h4 style="margin:2rem 0 1rem 0;font-weight:600;">Semi Trailer</h4>
-      
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Trailer Air Valve Leakage</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.trailer_air_valve_leakage">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Wheel Studs</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.wheel_studs">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Brake Lining</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.brake_lining">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Hub Covers</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.hub_covers">
-                        <span class="custom-checkbox"></span>
-                    </div>                            
-                  </div>
-      
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Spring/Center Bolt</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.spring_center_bolt">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Equalizer</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.equalizer">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Shock Absorbers</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.shock_absorbers">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Shackle Pins</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.shackle_pins">
-                        <span class="custom-checkbox"></span>
-                    </div>  
-                    </div>          
-                  
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                      <label for="">&nbsp;Overall Trailer Appearance</label>
-                      <input type="checkbox" name="" id="">
-                        <span class="custom-checkbox"></span>
-                    </div>      
-                    <div class="checklist-check exempt-b"></div>      
-                    <div class="checklist-check exempt-b"></div>      
-                    <div class="checklist-check exempt-b"></div>      
-                  </div>
-      
-                  <div class="buttonbox">
-                    <button @click="currentList = 2;modalScrollTop()">
-                       <i class="material-icons"></i>Back
-                    </button>
-                    <button @click="currentList = 4;modalScrollTop()" class="next-page">
-                      Next Page <i class="material-icons"></i>
-                    </button>
-                  </div>
-                </div>
-                
-                  
-                  <div class="list-4" v-if="currentList==4">
-                    <h4 style="margin:2rem 0 1rem 0;font-weight:600;">Engine/Cabin</h4>
-                  
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Fan Belt Tension</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.fan_belt_tension">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Pulley for Clearance</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.pulley_for_clearance">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Tie Rod Clearance</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.tie_rod_clearance">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Oil Leakage</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.oil_leakage">
-                        <span class="custom-checkbox"></span>
-                    </div>                         
-                  </div>
-      
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Coolant Spills/Leaks</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.coolant_spills_leaks">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Air Cleaner Housing</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.air_cleaner_housing">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Air Leakage</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.air_leakage">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Dashboard Functions</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.dashboard_functions">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                  </div>
-      
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Air Pressure</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.air_pressure">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                   
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Oil Pressure</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.oil_pressure">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Water Temperature</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.water_temperature">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Exhaust Leakage</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.exhaust_leakage">
-                        <span class="custom-checkbox"></span>
-                    </div>      
-                  </div>
-      
-                  <div class="field2 check">
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Front Shock Absorber</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.front_shock_absorber">
-                        <span class="custom-checkbox"></span>
-                    </div>
 
-                    <div class="checklist-check">
-                        <label for="">&nbsp;Cab Barrel</label>
-                        <input type="checkbox" name="" id=""  :disabled="status=='completed'" v-model="selectedTruckData.cab_barrel">
-                        <span class="custom-checkbox"></span>
-                    </div>
-                    <div class="checklist-check exempt-b"></div>      
-                    <div class="checklist-check exempt-b"></div>      
-                              
-                  </div>
-                  <div class="buttonbox">
-                    <button @click="currentList = 3;modalScrollTop()">
-                       <i class="material-icons"></i>Back
-                    </button>
-                    <button class="next-page" @click="confirmSubmitWorkOrder=true" v-if="status=='pending'">
-                      Submit <i class="material-icons"></i>
-                    </button>
-                  </div>
-                  </div>
-      
-                </form>
-                
-              </div>
-            </div>
+
+
+
           </div>
+        </div>
+
+
+        <div class="content-modal" v-if="showUsersModal">
+          <div class="modal-content">
+            <div class="close-button">
+              <span class="svg-icon"
+                ><svg
+                  @click="showUsersModal = false"
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="48"
+                  viewBox="0 -960 960 960"
+                  width="48"
+                >
+                  <path
+                    d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
+                  /></svg
+              ></span>
+            </div>
+
+            <div id="reg">
+              <div class="searchbar">
+                <input type="text" class="mx-4" @keyup.enter="getUsers(null, {search:searchUsersText});"   v-model="searchUsersText" placeholder="Search Users" >
+                <button style="background:var(--bs-success);color:#fff;border:1px solid var(--bs-success);margin-left:-10px;border-radius: .5rem;padding:.2rem 1rem;" @click="getUsers(null, {search:searchUsersText});">Search</button>
+              
+              </div>
+              <div class="card-body px-0 pb-2 my-4">
+                <div class="table-responsive p-0">
+                  <table class="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
+                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">email</th>
+                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">STATUS</th>
+                          <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Date Joined</th>
+              
+                        <th class="text-secondary opacity-7"></th>
+                      </tr>
+                    </thead>
+                    
+                    <tbody v-if="projects">
+                      <tr v-for="item in users.data" :key="item">
+
+                        <td style="cursor: pointer;" @click="projectData.assigned_to = {id:item.id,last_name:item.last_name,first_name:item.first_name};showUsersModal=false">
+                          <div class="d-flex px-4 py-1 font-weight-bold" style="color:var(--bs-primary);text-transform: capitalize;">
+                              {{item.last_name}} {{item.first_name}}
+                          </div>
+                        </td>
+                        <td class="text-sm">
+                          {{item.email}}
+                        </td>
+                        
+                        <td class="align-middle text-center text-sm">
+                          <span class="badge badge-sm bg-gradient-success" v-if="item.is_active">Active</span>
+                          <span class="badge badge-sm bg-gradient-secondary" v-else>Inactive</span>
+                        </td>
+                      
+                        <td class="align-middle text-center text-sm">
+                          <span class="text-xs font-weight-bold">{{moment(item.date_created).format("DD MMM, YYYY. hh:mm A") }} </span>
+                        </td>
+                        
+                        <td class="align-middle text-center">
+                          <span style="background:var(--bs-info);color:#fff;border:1px solid var(--bs-info);margin-left:10px;border-radius: .5rem;padding:.2rem 1rem;" @click="projectData.assigned_to = {id:item.id,last_name:item.last_name,first_name:item.first_name};showUsersModal=false">Assign User</span>
+                        </td>
+                      </tr>
+                      
+                     
+                    </tbody>
+                  </table>
+                  
+                  <div class="table-loader" v-if="recentProjectsLoader">
+                    <div class="loader"></div>
+                </div>
+                
+                </div>
+                <div class="pagination"  v-if="projects">
+
+                  <div class="controls" v-if="projects.pagination">
+                   <span @click="getProjects(null, {status, priority, order, search:searchText, page:projects.pagination.current_page - 1}) "  v-if="projects.pagination.current_page > 1">
+                     <i class="material-icons">chevron_left</i>
+                   </span>
+                   <span  v-else-if="projects.pagination.total_pages !== 1">
+                     <i class="material-icons">chevron_left</i>
+                   </span>
+                   <span v-for="i in projects.pagination.total_pages" :key="i" @click="getProjects(null, {status, priority, order, search:searchText, page:i}) " :class="{'active':projects.pagination.current_page === i}">
+                     {{ i }}
+                   </span>
+                   <span @click="getProjects(null, {status, priority, order, search:searchText, page:projects.pagination.current_page + 1}) " v-if="projects.pagination.current_page < projects.pagination.total_pages">
+                     <i class="material-icons">chevron_right</i>
+                   </span>
+                  </div>
+               
+                   <div class="pagination-info">
+                     <span>Page {{ projects.pagination.current_page }} of {{ projects.pagination.total_pages }}</span>
+                   </div>
+                 </div>
+              </div>
+            </div>
+
+
+
+
+          </div>
+        </div>
+
+
+       
           
-          <div class="content-modal" v-if="confirmSubmitWorkOrder">
+          <div class="content-modal" v-if="confirmDeleteProject">
             <div class="modal-content">
-              <h2>Confirm Routine Checklist?</h2>
-              <p>Are you sure you want to submit the result of this checklist?</p>
+              <h2>Confirm Delete Project?</h2>
+              <p>Are you sure you want to delete this Project?</p>
               <div class="buttonbox" style="display: flex;justify-content: space-between;">
-                <button @click="confirmSubmitWorkOrder=false;currentList=1;modalScrollTop()" style="background-color: var(--bs-danger);">Cancel</button>
-                <button @click="submitWorkOrder(selectedTruckData)" class="bg-success" style="">Submit</button>
+                <button @click="confirmDeleteProject=false;" style="background-color: var(--bs-info);">Cancel</button>
+                <button @click="submitProject('delete')" class="bg-danger" style="">Delete</button>
               </div>
              
             </div>
@@ -1017,6 +734,12 @@ select, input, textarea{
     
   }
   
+
+  .checklist.buttons{
+    display: flex;
+    flex-direction:row-reverse;
+    justify-content: space-between;
+  }
   
 
 
@@ -1555,7 +1278,15 @@ button:disabled {
 
   
 @media screen and (max-width: 600px) {
+  .checklist.buttons{
+    display: flex;
+    flex-direction:column;
+    justify-content:flex-start;
 
+    button:last-child{
+      margin-top:1rem;
+    }
+  }
     .searchbar{
       display: flex;
       flex-wrap: wrap;
@@ -1568,11 +1299,12 @@ button:disabled {
         margin-top:1rem;
         margin-left:-1rem;
       }
+      
     }
 
     .searchbar:nth-child(3){
         display:flex;
-        flex-direction: column;
+        flex-direction: row;
 
         select{
             width:100%;

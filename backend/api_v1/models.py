@@ -38,3 +38,20 @@ class Project(models.Model):
         ordering = ('-date_created',)
         
 
+
+class Activities(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.CharField(max_length=150, blank=True, null=True)
+    status = models.CharField(max_length=25, choices=[
+                                                      ('primary','primary'),
+                                                      ('pending','pending'),
+                                                      ('success','success'),
+                                                      ('cancelled','cancelled'),
+                                                      ], default='primary')
+    
+    date_added = models.DateTimeField(auto_now_add=True)
+    
+    
+    class Meta:
+        ordering = ('-date_added',)

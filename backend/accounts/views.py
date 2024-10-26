@@ -41,12 +41,12 @@ class GetUsers(APIView):
     pagination_class = ItemPagination
     def get(self, request):
         try:
-            searchText = request.query_params.get('searchText', None)
+            searchText = request.query_params.get('search', None)
             
             if searchText is not None:
-                users = User.objects.filter(Q(first_name=searchText) | 
-                                         Q(last_name=searchText) | 
-                                         Q(email=searchText), is_superuser=False
+                users = User.objects.filter(Q(first_name__icontains=searchText) | 
+                                         Q(last_name__icontains=searchText) | 
+                                         Q(email__icontains=searchText), is_superuser=False
                                          )
             else:
                 users = User.objects.exclude(is_superuser=True).order_by('last_name')
