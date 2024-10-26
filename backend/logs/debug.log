@@ -1,0 +1,12 @@
+INFO 2024-10-26 19:03:20,909 autoreload Watching for file changes with StatReloader
+INFO 2024-10-26 19:03:21,408 basehttp "GET /api/v1/dashboard/ HTTP/1.1" 200 320
+INFO 2024-10-26 19:03:21,418 basehttp "GET /api/v1/activities/ HTTP/1.1" 200 2200
+INFO 2024-10-26 19:03:21,428 basehttp "GET /api/v1/projects/?order=-date_created HTTP/1.1" 200 1370
+INFO 2024-10-26 19:03:38,794 autoreload Watching for file changes with StatReloader
+INFO 2024-10-26 19:03:40,906 basehttp "GET /api/v1/projects/?order=-date_created HTTP/1.1" 200 1370
+INFO 2024-10-26 19:03:40,918 basehttp "GET /api/v1/activities/ HTTP/1.1" 200 2200
+INFO 2024-10-26 19:03:40,920 basehttp "GET /api/v1/dashboard/ HTTP/1.1" 200 320
+INFO 2024-10-26 19:03:41,330 basehttp "GET /accounts/userdata/ HTTP/1.1" 200 267
+INFO 2024-10-26 19:03:41,336 basehttp "GET /api/v1/projects/?order=-date_created HTTP/1.1" 200 1370
+INFO 2024-10-26 19:03:41,337 basehttp "GET /api/v1/dashboard/ HTTP/1.1" 200 320
+INFO 2024-10-26 19:03:41,342 basehttp "GET /api/v1/activities/ HTTP/1.1" 200 2200

@@ -1,0 +1,14 @@
+INFO 2024-10-26 19:03:40,856 middleware Request Method: GET, Path: /api/v1/dashboard/
+INFO 2024-10-26 19:03:40,864 middleware Request Method: GET, Path: /api/v1/activities/
+INFO 2024-10-26 19:03:40,876 middleware Request Method: GET, Path: /api/v1/projects/
+INFO 2024-10-26 19:03:40,905 middleware Response Status Code: 200
+INFO 2024-10-26 19:03:40,916 middleware Response Status Code: 200
+INFO 2024-10-26 19:03:40,920 middleware Response Status Code: 200
+INFO 2024-10-26 19:03:41,321 middleware Request Method: GET, Path: /accounts/userdata/
+INFO 2024-10-26 19:03:41,322 middleware Request Method: GET, Path: /api/v1/dashboard/
+INFO 2024-10-26 19:03:41,323 middleware Request Method: GET, Path: /api/v1/projects/
+INFO 2024-10-26 19:03:41,324 middleware Request Method: GET, Path: /api/v1/activities/
+INFO 2024-10-26 19:03:41,328 middleware Response Status Code: 200
+INFO 2024-10-26 19:03:41,335 middleware Response Status Code: 200
+INFO 2024-10-26 19:03:41,336 middleware Response Status Code: 200
+INFO 2024-10-26 19:03:41,340 middleware Response Status Code: 200

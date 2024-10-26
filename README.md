@@ -1,7 +1,43 @@
-Project Management app
+PROJECT MANAGEMENT SYSTEM 
+BACKEND (DJANGO)
+FRONTEND (VUE.JS)
 
-Backend (Django)
 
-frontend (Vue.js)
+TO START THE APP:
+NAVIGATE TO THE backend folder:
 
-"# project_management" 
+NATIVELY:
+- CREATE A VIRTUAL ENVIRONMENT AND ACTIVATE IT
+- INSTALL THE REQUIREMENTS 
+- run `python manage.py runserver`
+
+USING DOCKER:
+- INSTALL DOCKER 
+- NAVIGATE TO THE PROJECT DIRECTORY 
+- RUN THE COMMANDS IN THE COMMAND.TXT ON THE TERMINAL FROM THE PROJECT DIRECTORY
+
+- OPEN DOCKER AND START THE CONTAINER
+
+TO START THE FRONTEND:
+- NOTE: RUN `npm install` TO INSTALL ALLL DEPENDENCIES
+
+- NAVIGATE TO PROJECT DIRECTORY (PROJECT-APP)
+
+-RUN `npx vite` TO START THE SERVER AND VISIT `localhost:5173` ON YOUR ADDRESS BAR
+
+
+
+
+
+LOGINS:
+FOR ADMIN:
+    USERNAME: admin@project.com (also has superuser permissions)
+    PASSWORD: admin 
+
+FOR USER:
+    USERNAME: useer@project.com
+    PASSWORD: user1234
+
+
+
+NOTE: api docs are on /docs (i.e. localhost:8000/docs)

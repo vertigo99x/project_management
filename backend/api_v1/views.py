@@ -19,11 +19,20 @@ class CustomPagination(PageNumberPagination):
     max_page_size = 100 
     
     
+
+class CustomAuthenticated(IsAuthenticated):
+    def has_permission(self, request, view):
+        if request.resolver_match.url_name == 'docs' or request.resolver_match.url_name == 'api_schema':  #to allow swagger show docs for Views with IsAuthenticated
+            return True
+        return super().has_permission(request, view)
+
+
+
 class ProjectView(APIView):
     parser_classes = [JSONParser]
     serializer_class = ProjectSerializer
     pagination_class = CustomPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CustomAuthenticated]
     authentication_classes = [JWTAuthentication]
     
     def get(self, request, *args, **kwargs):
@@ -88,6 +97,18 @@ class ProjectView(APIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
+    
+    
+    
+    
+    
+class CreateProjectView(APIView):
+    parser_classes = [JSONParser]
+    serializer_class = ProjectSerializer
+    pagination_class = CustomPagination
+    permission_classes = [CustomAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -107,7 +128,15 @@ class ProjectView(APIView):
             }
             return Response(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+  
+  
+  
+class UpdateProjectView(APIView):
+    parser_classes = [JSONParser]
+    serializer_class = ProjectSerializer
+    pagination_class = CustomPagination
+    permission_classes = [CustomAuthenticated]
+    authentication_classes = [JWTAuthentication]
     def put(self, request, uuid, *args, **kwargs):
         project = get_object_or_404(Project, uuid=uuid)
         serializer = ProjectSerializer(project, data=request.data, partial=True)
@@ -140,6 +169,8 @@ class ProjectView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
+    
+class DeleteProjectView(APIView):
     def delete(self, request, uuid, *args, **kwargs):
         project = get_object_or_404(Project, uuid=uuid)
         
@@ -164,10 +195,9 @@ class ProjectView(APIView):
             }
         return Response(response_data, status=status.HTTP_204_NO_CONTENT)
     
-    
 class DashboardData(APIView):
     parser_classes = [JSONParser]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CustomAuthenticated]
     authentication_classes = [JWTAuthentication]
     
     def get(self, request, *args, **kwargs):
@@ -240,7 +270,7 @@ class DashboardData(APIView):
 class ActivityView(APIView):
     parser_classes = [JSONParser]
     pagination_class = CustomPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CustomAuthenticated]
     authentication_classes = [JWTAuthentication]
     serializer_classes = ActivitySerializer   
     

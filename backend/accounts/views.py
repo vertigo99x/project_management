@@ -18,6 +18,12 @@ class ItemPagination(PageNumberPagination):
     max_page_size = 100 
 
 
+class CustomAuthenticated(permissions.IsAuthenticated):
+    def has_permission(self, request, view):
+        if request.resolver_match.url_name == 'docs' or request.resolver_match.url_name == 'api_schema':
+            return True
+        return super().has_permission(request, view)
+
 
 class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -28,7 +34,7 @@ class IsAdmin(permissions.BasePermission):
 class UserDetailView(RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CustomAuthenticated]
 
     def get_object(self):
         return self.request.user
@@ -36,7 +42,7 @@ class UserDetailView(RetrieveAPIView):
 
 
 class GetUsers(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    permission_classes = [CustomAuthenticated]
     authentication_classes = [JWTAuthentication]
     pagination_class = ItemPagination
     def get(self, request):
