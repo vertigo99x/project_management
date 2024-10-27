@@ -3,6 +3,12 @@ BACKEND (DJANGO)
 FRONTEND (VUE.JS)
 
 
+FEATURES:
+-USERS AND ADMINS CAN REGISTER
+-ADMIN CAN CREATE, UPDATE, DELETE AND ASSIGN PROJECTS TO USERS
+-ADMINS CAN ONLY VIEW PROJECTS THEY CREATED OR ASSIGNED 
+
+
 TO START THE APP:
 NAVIGATE TO THE backend folder:
 
@@ -28,13 +34,19 @@ TO START THE FRONTEND:
 
 
 
-LOGINS:
+TEST LOGINS:
 FOR ADMIN:
     USERNAME: admin@project.com (also has superuser permissions)
     PASSWORD: admin 
 
+    USERNAME: admin2@project.com
+    PASSWORD: admin1234
+
 FOR USER:
     USERNAME: user@project.com
+    PASSWORD: user1234
+
+    USERNAME: test@project.com
     PASSWORD: user1234
 
 
