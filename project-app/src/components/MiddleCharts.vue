@@ -306,6 +306,7 @@ const getTodayPercent = (value) => {
 }
 
 
+/*
 
 watch(
   () => props.chartData,
@@ -326,6 +327,8 @@ watch(
   },
   { immediate: true }
 );
+
+*/
 
 onMounted(() => {
   nextTick(() => {

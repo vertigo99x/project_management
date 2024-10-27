@@ -482,7 +482,8 @@ onMounted(() => {
                   /></svg
               ></span>
             </div>
-
+            <h3 class="text-secondary mx-2 " style="font-size:24px
+            ;margin-top:1rem;text-transform:capitalize;" >{{mode}} Project</h3>
             <div id="reg">
              
               <div class="field2">
@@ -533,7 +534,7 @@ onMounted(() => {
                 <div class="checklist" v-if="userData.role == 'admin'">
                   <span class="text-danger" style="cursor:pointer;text-decoration: underline;" v-if="projectData.project_status!=='cancelled'" @click="projectData.project_status='cancelled';submitProject('update');">Cancel this Project?</span>
                   <span class="text-danger font-weight-bold" style="" v-if="projectData.project_status=='cancelled'">PROJECT WAS CANCELLED</span>
-                  <span class="text-info" style="cursor:pointer;text-decoration: underline;" v-else" @click="projectData.project_status='in_progress';submitProject('update');">Revive this Project?</span>
+                  <span class="text-info" style="cursor:pointer;text-decoration: underline;" v-if="projectData.project_status=='cancelled'" @click="projectData.project_status='in_progress';submitProject('update');">Revive this Project?</span>
                 </div>
                 <div class="checklist buttons" v-if="userData.role == 'admin'">
                   <button style="text-transform: capitalize;" v-if="mode == 'create'" @click="submitProject()">Create Project +</button>
@@ -552,7 +553,7 @@ onMounted(() => {
 
 
         <div class="content-modal" v-if="showUsersModal">
-          <div class="modal-content">
+          <div class="modal-content" style="max-width:55rem;">
             <div class="close-button">
               <span class="svg-icon"
                 ><svg
@@ -567,7 +568,8 @@ onMounted(() => {
                   /></svg
               ></span>
             </div>
-
+            <h3 class="text-dark mx-4" style="margin-bottom:-1rem;font-size:24px
+            ;margin-top:1rem;" >Assign A User</h3>
             <div id="reg">
               <div class="searchbar">
                 <input type="text" class="mx-4" @keyup.enter="getUsers(null, {search:searchUsersText});"   v-model="searchUsersText" placeholder="Search Users" >
