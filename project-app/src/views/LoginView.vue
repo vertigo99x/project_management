@@ -10,7 +10,7 @@ const router = useRouter();
 const route = useRoute(); // Use useRoute to get current route
 const store = useStore();
 
-const current_state = ref('register')
+const current_state = ref('login')
 
 const login = ref({
     username: '',
