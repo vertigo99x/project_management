@@ -212,7 +212,7 @@ async function submitRegister() {
             <div class="container">
               <div class="row">
                 <div class="col-6 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 start-0 text-center justify-content-center flex-column">
-                  <div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center" style="background-image: url('https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'); background-size: cover;">
+                  <div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center" style="background-image: url('https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'); background-size: cover;z-index:999">
                   </div>
                 </div>
                 <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column ms-auto me-auto ms-lg-auto me-lg-5 main-body" v-if="current_state=='login'">
@@ -235,7 +235,7 @@ async function submitRegister() {
                         </div>
                         
                         <div class="text-center">
-                          <button type="button" class="btn btn-lg bg-gradient-secondary btn-lg w-100 mt-4 mb-0" @click="submitLogin()">Sign In</button>
+                          <button type="button" class="btn btn-lg bg-gradient-secondary btn-lg w-100 mt-4 mb-0" @click="submitLogin()" :disabled="!login.password || !login.username">Sign In</button>
                         </div>
 
                         <div class="text-dark mt-4">
@@ -348,9 +348,9 @@ async function submitRegister() {
   animation: shake .3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   
   .card-body{
-    animation: fadein .3s ease-in-out forwards;
+    animation: fadein .5s ease-in-out forwards;
     opacity: 0;
-    animation-delay: .3s;
+    
   }
 }
 
@@ -371,7 +371,10 @@ async function submitRegister() {
     transform: translateX(0%)
   }
   25%{
-    transform: translateX(-100%)
+    transform: translateX(-25%)
+  }
+  25%{
+    transform: translateX(25%)
   }
   100%{
     
