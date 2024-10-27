@@ -35,7 +35,7 @@ FOR ADMIN:
     PASSWORD: admin 
 
 FOR USER:
-    USERNAME: useer@project.com
+    USERNAME: user@project.com
     PASSWORD: user1234
 
 
