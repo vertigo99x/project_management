@@ -1,0 +1,17 @@
+ERROR 2024-10-27 16:19:09,076 log Internal Server Error: /api_schema/
+Traceback (most recent call last):
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\core\handlers\base.py", line 220, in _get_response
+    response = response.render()
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\template\response.py", line 114, in render
+    self.content = self.rendered_content
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\rest_framework\response.py", line 74, in rendered_content
+    ret = renderer.render(self.data, accepted_media_type, context)
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\drf_yasg\renderers.py", line 79, in render
+    return render_to_string(self.template, renderer_context, renderer_context['request'])
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: drf-yasg/swagger-ui.html

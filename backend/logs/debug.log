@@ -1,0 +1,13 @@
+INFO 2024-10-27 16:19:03,956 autoreload Watching for file changes with StatReloader
+ERROR 2024-10-27 16:19:09,078 basehttp "GET /api_schema/ HTTP/1.1" 500 103946
+INFO 2024-10-27 16:19:30,564 autoreload C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\project\urls.py changed, reloading.
+INFO 2024-10-27 16:19:31,186 autoreload Watching for file changes with StatReloader
+INFO 2024-10-27 16:19:32,570 autoreload C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\project\urls.py changed, reloading.
+INFO 2024-10-27 16:19:33,224 autoreload Watching for file changes with StatReloader
+INFO 2024-10-27 16:19:40,073 autoreload C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\project\urls.py changed, reloading.
+INFO 2024-10-27 16:19:40,900 autoreload Watching for file changes with StatReloader
+INFO 2024-10-27 16:20:30,657 autoreload Watching for file changes with StatReloader
+INFO 2024-10-27 16:20:32,884 basehttp "GET /docs/ HTTP/1.1" 200 701
+INFO 2024-10-27 16:20:34,060 basehttp "GET /api_schema/ HTTP/1.1" 200 10121
+INFO 2024-10-27 16:21:40,467 autoreload C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\project\urls.py changed, reloading.
+INFO 2024-10-27 16:21:41,140 autoreload Watching for file changes with StatReloader
