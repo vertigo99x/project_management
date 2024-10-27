@@ -12,3 +12,30 @@ INFO 2024-10-26 19:03:41,328 middleware Response Status Code: 200
 INFO 2024-10-26 19:03:41,335 middleware Response Status Code: 200
 INFO 2024-10-26 19:03:41,336 middleware Response Status Code: 200
 INFO 2024-10-26 19:03:41,340 middleware Response Status Code: 200
+INFO 2024-10-27 15:53:38,549 middleware Request Method: POST, Path: /accounts/create-user
+INFO 2024-10-27 15:53:38,711 middleware Response Status Code: 404
+ERROR 2024-10-27 15:53:38,745 log Internal Server Error: /accounts/create-user
+Traceback (most recent call last):
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\utils\deprecation.py", line 136, in __call__
+    response = self.process_response(request, response)
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+  File "C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\venv\lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to localhost:8000/accounts/create-user/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+INFO 2024-10-27 15:54:30,128 middleware Request Method: POST, Path: /accounts/create-user
+INFO 2024-10-27 15:54:30,302 middleware Response Status Code: 201
+INFO 2024-10-27 15:54:43,230 middleware Request Method: POST, Path: /api/token
+INFO 2024-10-27 15:54:43,442 middleware Response Status Code: 200
+INFO 2024-10-27 15:54:43,507 middleware Request Method: GET, Path: /api/v1/dashboard/
+INFO 2024-10-27 15:54:43,508 middleware Request Method: GET, Path: /accounts/userdata/
+INFO 2024-10-27 15:54:43,514 middleware Response Status Code: 200
+INFO 2024-10-27 15:54:43,517 middleware Response Status Code: 200
+INFO 2024-10-27 15:54:43,552 middleware Request Method: GET, Path: /api/v1/projects/
+INFO 2024-10-27 15:54:43,555 middleware Response Status Code: 200
+INFO 2024-10-27 15:54:43,609 middleware Request Method: GET, Path: /api/v1/activities/
+INFO 2024-10-27 15:54:43,613 middleware Response Status Code: 200
+INFO 2024-10-27 15:55:36,742 middleware Request Method: POST, Path: /accounts/create-user/
+INFO 2024-10-27 15:55:37,039 middleware Response Status Code: 201

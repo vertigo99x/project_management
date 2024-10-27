@@ -6,10 +6,13 @@ from rest_framework import status
 from rest_framework.generics import RetrieveAPIView
 from .models import User
 from .serializers import UserSerializer
+from rest_framework.parsers import JSONParser, MultiPartParser
 #from api.models import Activities
 from rest_framework.pagination import PageNumberPagination
 
 from django.db.models import Q
+from django.contrib.auth.hashers import make_password
+
 
 
 class ItemPagination(PageNumberPagination):
@@ -39,6 +42,36 @@ class UserDetailView(RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
+
+
+class UserCreateView(APIView):
+    serializer_class = UserSerializer
+    parser_classes = [JSONParser, MultiPartParser]
+    
+    def post(self, request, *args, **kwargs):
+        data = request.data
+
+        user_serializer = self.serializer_class(data={
+            'first_name': data.get('first_name'),
+            'last_name': data.get('last_name'),
+            'email': data.get('email'),
+            'role': data.get('role'),
+            'is_active': True
+        })
+
+        if user_serializer.is_valid():
+            user = user_serializer.save(password=make_password(data.get('password')))
+            image = request.FILES.get('image')
+            if image:
+                user.image = image
+                user.save()
+
+            return Response({
+                "data":None,
+                "status":True,
+                "message":"User Registered Successfully"}, status=status.HTTP_201_CREATED)
+        
+        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetUsers(APIView):

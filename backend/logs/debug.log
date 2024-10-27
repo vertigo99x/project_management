@@ -10,3 +10,25 @@ INFO 2024-10-26 19:03:41,330 basehttp "GET /accounts/userdata/ HTTP/1.1" 200 267
 INFO 2024-10-26 19:03:41,336 basehttp "GET /api/v1/projects/?order=-date_created HTTP/1.1" 200 1370
 INFO 2024-10-26 19:03:41,337 basehttp "GET /api/v1/dashboard/ HTTP/1.1" 200 320
 INFO 2024-10-26 19:03:41,342 basehttp "GET /api/v1/activities/ HTTP/1.1" 200 2200
+INFO 2024-10-27 15:53:35,027 autoreload Watching for file changes with StatReloader
+ERROR 2024-10-27 15:53:38,747 basehttp "POST /accounts/create-user HTTP/1.1" 500 80310
+INFO 2024-10-27 15:54:13,572 autoreload C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\accounts\urls.py changed, reloading.
+INFO 2024-10-27 15:54:14,275 autoreload Watching for file changes with StatReloader
+INFO 2024-10-27 15:54:30,303 basehttp "POST /accounts/create-user HTTP/1.1" 201 68
+INFO 2024-10-27 15:54:43,443 basehttp "POST /api/token HTTP/1.1" 200 582
+INFO 2024-10-27 15:54:43,477 basehttp "OPTIONS /accounts/userdata HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,489 basehttp "OPTIONS /api/v1/dashboard HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,492 basehttp "OPTIONS /api/v1/projects?order=-date_created HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,492 basehttp "OPTIONS /api/v1/activities HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,498 basehttp "OPTIONS /accounts/userdata/ HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,501 basehttp "OPTIONS /api/v1/dashboard/ HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,505 basehttp "OPTIONS /api/v1/projects/?order=-date_created HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,505 basehttp "OPTIONS /api/v1/activities/ HTTP/1.1" 200 0
+INFO 2024-10-27 15:54:43,515 basehttp "GET /api/v1/dashboard/ HTTP/1.1" 200 315
+INFO 2024-10-27 15:54:43,517 basehttp "GET /accounts/userdata/ HTTP/1.1" 200 251
+INFO 2024-10-27 15:54:43,556 basehttp "GET /api/v1/projects/?order=-date_created HTTP/1.1" 200 148
+INFO 2024-10-27 15:54:43,614 basehttp "GET /api/v1/activities/ HTTP/1.1" 200 117
+INFO 2024-10-27 15:55:05,280 autoreload C:\Users\3ples\Desktop\__PROJECTMGMT__\backend\accounts\urls.py changed, reloading.
+INFO 2024-10-27 15:55:05,958 autoreload Watching for file changes with StatReloader
+INFO 2024-10-27 15:55:36,736 basehttp "OPTIONS /accounts/create-user/ HTTP/1.1" 200 0
+INFO 2024-10-27 15:55:37,040 basehttp "POST /accounts/create-user/ HTTP/1.1" 201 68

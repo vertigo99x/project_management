@@ -26,7 +26,7 @@ const activities = ref(null);
 
 
 let timer = null;
-
+let roles = ['admin', 'user'];
 
 
 
@@ -56,6 +56,16 @@ async function getUserData() {
     try {
         const response = await $http.get('accounts/userdata');
         userData.value = response.data;
+
+        if(userData && !roles.includes(userData.value.role)) {
+          toast.error(`This User ROle cannot access the contents of this page`, {
+                    autoClose: 3000,
+                    position: toast.POSITION.TOP_RIGHT,
+                });
+          if(timer){
+            clearInterval(timer);
+          }      
+        }
         //userCat.value = userData.role
         isLoading.value = false;
     } catch (error) {
