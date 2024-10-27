@@ -203,18 +203,22 @@ class DashboardData(APIView):
     
     def get(self, request, *args, **kwargs):
         user = request.user
-        role = getattr(user, 'role', 'user')  
+        role = getattr(user, 'role', 'user')
 
-        current_date = now()
-        start_of_week = current_date - timedelta(days=current_date.weekday() + 1)  
+        current_date = now() 
+
+        start_of_week = current_date - timedelta(days=(current_date.weekday() + 1) % 7)
         start_of_week = start_of_week.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_week = start_of_week + timedelta(days=6, hours=23, minutes=59, seconds=59)
 
-        created_count = [0] * 7
-        assigned_count = [0] * 7
-        completed_count = [0] * 7
+        created_count = [0] * 7  
+        assigned_count = [0] * 7 
+        completed_count = [0] * 7 
 
-        
+        def get_day_of_week_index(project_date):
+            project_date = project_date + timedelta(hours=1)  #I accoounted for the Africa GMT+1 timezone for the count
+            return (project_date.weekday() + 1) % 7
+
         if role == 'admin':
             total_created_projects = Project.objects.filter(created_by=user)
             total_cancelled_or_abandoned_projects = Project.objects.filter(Q(status="abandoned") | Q(status="cancelled"), created_by=user)
@@ -225,13 +229,14 @@ class DashboardData(APIView):
             assigned_projects = total_assigned_projects.filter(date_created__range=[start_of_week, end_of_week])
             
             for project in created_projects:
-                day_of_week = (project.date_created.weekday() + 1) % 7
+                day_of_week = get_day_of_week_index(project.date_created)
+                print('waa', day_of_week, project.date_created)
                 created_count[day_of_week] += 1
             for project in completed_projects:
-                day_of_week = (project.date_created.weekday() + 1) % 7
+                day_of_week = get_day_of_week_index(project.date_created)
                 completed_count[day_of_week] += 1
             for project in assigned_projects:
-                day_of_week = (project.date_created.weekday() + 1) % 7
+                day_of_week = get_day_of_week_index(project.date_created)
                 assigned_count[day_of_week] += 1
 
         else:
@@ -240,20 +245,20 @@ class DashboardData(APIView):
             total_completed_projects = Project.objects.filter(assigned_to=user, status='done')
             completed_projects = total_completed_projects.filter(date_created__range=[start_of_week, end_of_week])
             for project in assigned_projects:
-                day_of_week = (project.date_created.weekday() + 1) % 7
+                day_of_week = get_day_of_week_index(project.date_created)
                 assigned_count[day_of_week] += 1
             for project in completed_projects:
-                day_of_week = (project.date_created.weekday() + 1) % 7
+                day_of_week = get_day_of_week_index(project.date_created)
                 completed_count[day_of_week] += 1
                 
         start_date_iso = start_of_week.date().isoformat()  
-        end_date_iso = end_of_week.date().isoformat()      
+        end_date_iso = end_of_week.date().isoformat()
 
         response_data = {
             "status": True,
             "message": "Weekly project stats",
             "data": {
-                "total_created_count":total_created_projects.count() if role == 'admin' else None,
+                "total_created_count": total_created_projects.count() if role == 'admin' else None,
                 "total_completed_count": total_completed_projects.count(),
                 "total_assigned_count": total_assigned_projects.count(),
                 "total_cancelled_or_abandoned_count": total_cancelled_or_abandoned_projects.count() if role == 'admin' else None,
@@ -264,10 +269,10 @@ class DashboardData(APIView):
                 "week_end": end_date_iso  
             }
         }
+        #print(response_data)
         return Response(response_data)
     
-
-   
+    
 class ActivityView(APIView):
     parser_classes = [JSONParser]
     pagination_class = CustomPagination

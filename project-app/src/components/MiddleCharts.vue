@@ -297,13 +297,30 @@ const enableChartLineTasks = () => {
 
 
 const getTodayPercent = (value) => {
-  let percentage;
-  const today = new Date().getDay()
-  if(today > 0){
-    percentage = ((value[today] - value[today - 1]) * 100) / value[today - 1]
+  const today = new Date().getDay();  
+  let percentage = 0;
+
+  if (today === 0) {
+   
+    if (value[6] === 0 && value[0] > 0) {
+      return 100; 
+    } else if (value[6] === 0 || value[0] === 0) {
+      return 0; 
+    }
+    percentage = ((value[0] - value[6]) * 100) / value[6];
+  } else {
+    
+    if (value[today - 1] === 0 && value[today] > 0) {
+      return 100;  
+    } else if (value[today - 1] === 0 || value[today] === 0) {
+      return 0; 
+    }
+    percentage = ((value[today] - value[today - 1]) * 100) / value[today - 1];
   }
-  return percentage
-}
+
+  return percentage;
+};
+
 
 
 /*

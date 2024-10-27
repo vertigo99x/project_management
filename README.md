@@ -2,7 +2,10 @@ PROJECT MANAGEMENT SYSTEM
 BACKEND (DJANGO)
 FRONTEND (VUE.JS)
 
-![image](https://github.com/user-attachments/assets/322d1590-a723-42b9-ad2d-dbec2f9d32f3)
+
+![image](https://github.com/user-attachments/assets/5018b796-429c-441b-9e54-f520e054c931)
+
+
 
 
 FEATURES:
@@ -10,9 +13,9 @@ FEATURES:
 -ADMIN CAN CREATE, UPDATE, DELETE AND ASSIGN PROJECTS TO USERS
 -ADMINS CAN ONLY VIEW PROJECTS THEY CREATED OR ASSIGNED 
 
-![image](https://github.com/user-attachments/assets/5018b796-429c-441b-9e54-f520e054c931)
 
-![image](https://github.com/user-attachments/assets/18a150c6-f401-4095-9960-56204544f308)
+![image](https://github.com/user-attachments/assets/322d1590-a723-42b9-ad2d-dbec2f9d32f3)
+
 
 TO START THE APP:
 NAVIGATE TO THE backend folder:
@@ -57,3 +60,6 @@ FOR USER:
 
 
 NOTE: api docs are on /docs (i.e. localhost:8000/docs)
+
+
+![image](https://github.com/user-attachments/assets/18a150c6-f401-4095-9960-56204544f308)

@@ -406,7 +406,7 @@ onMounted(() => {
                           {{item.project_description.length >=30 ? item.project_description.slice(0,30) : item.project_description}}
                         </td>
                         <td class="align-middle text-center text-sm" v-if="userData.role=='admin'">
-                          <span class="text-secondary font-weight-bold" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
+                          <span class="text-secondary font-weight-bold" style="text-transform:capitalize;" v-if="item.assigned_to">{{ item.assigned_to.last_name}} {{ item.assigned_to.first_name }}</span>
                           <span class="text-info font-weight-bold" style="cursor: pointer;" @click="selectProject(item);getUsers();showUsersModal=true;" v-else>Assign User</span>
                         </td>
                         <td class="align-middle text-center text-sm">
@@ -477,6 +477,7 @@ onMounted(() => {
                   viewBox="0 -960 960 960"
                   width="48"
                 >
+                
                   <path
                     d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z"
                   /></svg
@@ -531,11 +532,7 @@ onMounted(() => {
                   <span  class="mx-2 text-dark" v-else>{{ projectData.project_status.replace('_', ' ') }}</span>
                 </div>
 
-                <div class="checklist" v-if="userData.role == 'admin'">
-                  <span class="text-danger" style="cursor:pointer;text-decoration: underline;" v-if="projectData.project_status!=='cancelled'" @click="projectData.project_status='cancelled';submitProject('update');">Cancel this Project?</span>
-                  <span class="text-danger font-weight-bold" style="" v-if="projectData.project_status=='cancelled'">PROJECT WAS CANCELLED</span>
-                  <span class="text-info" style="cursor:pointer;text-decoration: underline;" v-if="projectData.project_status=='cancelled'" @click="projectData.project_status='in_progress';submitProject('update');">Revive this Project?</span>
-                </div>
+              
                 <div class="checklist buttons" v-if="userData.role == 'admin'">
                   <button style="text-transform: capitalize;" v-if="mode == 'create'" @click="submitProject()">Create Project +</button>
                   <button style="text-transform: capitalize;" v-else-if="mode == 'update'" @click="submitProject('update')">Update Project</button>
